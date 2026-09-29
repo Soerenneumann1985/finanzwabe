@@ -125,6 +125,35 @@ def test_unknown_text_falls_back_by_sign():
     assert ei.categorize("Irgendwas", 100) == ("Sonstige Einnahmen", None, False)
 
 
+def test_lone_wrong_year_is_fixed_in_any_sheet():
+    rows = [
+        (dt.datetime(2024, 3, 14), -1, "A"),
+        (dt.datetime(2025, 3, 15), -2, "Typo"),
+        (dt.datetime(2024, 3, 18), -3, "B"),
+        (dt.datetime(2024, 12, 31), -4, "Silvester"),
+        (dt.datetime(2025, 1, 2), -5, "Neujahr"),  # real year change: untouched
+    ]
+    sheet = ei.parse_sheet("2020-2023", rows)
+    assert [r.date for r in sheet.rows] == [D(2024, 3, 14), D(2024, 3, 15), D(2024, 3, 18),
+                                            D(2024, 12, 31), D(2025, 1, 2)]
+    assert [r.date_fixed for r in sheet.rows] == [False, True, False, False, False]
+
+
+def test_sheet_years():
+    assert list(ei.sheet_years("2026")) == [2026]
+    assert list(ei.sheet_years("2020-2023")) == [2020, 2021, 2022, 2023]
+    assert ei.sheet_years("Konto ab 2016") is None
+
+
+def test_range_sheet_overlap_is_dropped():
+    old = ei.parse_sheet("2020-2023", [(dt.datetime(2018, 4, 3), -1, "alt"), (dt.datetime(2023, 5, 1), -2, "x"),
+                                       (dt.datetime(2024, 1, 5), -3, "auch im Blatt 2024")])
+    new = ei.parse_sheet("2024", [(dt.datetime(2024, 1, 5), -3, "auch im Blatt 2024")])
+    kept = ei.without_overlaps([old, new])
+    assert [r.text for r in kept[0].rows] == ["alt", "x"]
+    assert [r.text for r in ei.without_overlaps([old])[0].rows] == ["alt", "x", "auch im Blatt 2024"]
+
+
 def test_overlapping_year_rows_are_dropped(workbook_bytes):
     sheets = ei.without_overlaps(ei.parse_workbook(io.BytesIO(workbook_bytes)))
     old = next(s for s in sheets if s.name == "2025")

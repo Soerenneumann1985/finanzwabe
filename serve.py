@@ -25,12 +25,28 @@ def local_network_ip() -> str:
         probe.close()
 
 
+def port_in_use(port: int) -> bool:
+    """True if something on this PC already answers on the port.
+
+    Windows lets two programs listen on the same port; the browser then talks
+    to a random one of them (e.g. the demo instead of your real data).
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.5)
+        return probe.connect_ex(("127.0.0.1", port)) == 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Finanz-App starten")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     parser.add_argument("--demo", action="store_true", help="mit Beispieldaten statt echten Daten starten")
     parser.add_argument("--local-only", action="store_true", help="nur auf diesem PC erreichbar (nicht im WLAN)")
     args = parser.parse_args()
+
+    if port_in_use(args.port):
+        print(f"\n  Port {args.port} ist schon belegt – läuft die Finanz-App bereits in einem anderen Fenster?")
+        print("  Bitte das andere Fenster schließen (Strg+C) oder mit --port 8001 starten.\n")
+        raise SystemExit(1)
 
     if args.demo:
         import seed

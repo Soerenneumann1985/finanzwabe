@@ -74,7 +74,8 @@ def preview():
             return render_template("import_done.html", result=result)
 
     this_year = dt.date.today().year
-    preselected = {s.name for s in sheets if excel_import.sheet_year(s) == this_year} or {sheets[-1].name}
+    preselected = {s.name for s in sheets if this_year in (excel_import.sheet_years(s.name) or ())} \
+        or {sheets[-1].name}
     snapshot = excel_import.latest_snapshot([s for s in sheets if s.name in preselected])
     giro = next((a for a in accounts if a.type == "giro"), accounts[0] if accounts else None)
     return render_template("import_preview.html", sheets=sheets, preselected=preselected, accounts=accounts,

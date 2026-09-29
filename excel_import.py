@@ -314,21 +314,31 @@ def parse_sheet(name: str, rows_of_values) -> ParsedSheet:
 
 
 def _fix_year_typos(sheet_name: str, bookings: list[list]) -> set[int]:
-    """In a sheet named "2026", a lone "24.03.2025" between March 2026 rows is a typo."""
-    if not re.fullmatch(r"\d{4}", sheet_name.strip()):
-        return set()
-    year = int(sheet_name.strip())
+    """Correct a lone wrong year: "24.03.2025" between rows of 23. and 24.03.2026.
+
+    A row counts as a typo when both neighbours share another year and the
+    corrected date fits between them. At the start or end of a sheet named
+    after one year, that year is used instead of the missing neighbour.
+    """
+    years = sheet_years(sheet_name)
+    single_year = years[0] if years and len(years) == 1 else None
     fixed = set()
     for index, booking in enumerate(bookings):
         day = booking[0]
+        before = bookings[index - 1][0] if index > 0 else None
+        after = bookings[index + 1][0] if index + 1 < len(bookings) else None
+        neighbour_years = {d.year for d in (before, after) if d is not None}
+        if len(neighbour_years) != 1:
+            continue
+        year = neighbour_years.pop()
+        if (before is None or after is None) and year != single_year:
+            continue
         if day.year == year:
             continue
         try:
             candidate = day.replace(year=year)
         except ValueError:
             continue
-        before = next((b[0] for b in reversed(bookings[:index]) if b[0].year == year), None)
-        after = next((b[0] for b in bookings[index + 1:] if b[0].year == year), None)
         if (before is None or before <= candidate) and (after is None or candidate <= after):
             booking[0] = candidate
             fixed.add(index)
@@ -387,22 +397,27 @@ class ImportResult:
     snapshots: int = 0
 
 
-def sheet_year(sheet: ParsedSheet) -> int | None:
-    name = sheet.name.strip()
-    return int(name) if re.fullmatch(r"\d{4}", name) else None
+def sheet_years(name: str) -> range | None:
+    """Years a sheet is about, from its name: "2026" or "2020-2023"."""
+    match = re.fullmatch(r"(\d{4})(?:\s*[-–]\s*(\d{4}))?", name.strip())
+    if match is None:
+        return None
+    first, last = int(match[1]), int(match[2] or match[1])
+    return range(first, last + 1) if first <= last else None
 
 
 def without_overlaps(sheets: list[ParsedSheet]) -> list[ParsedSheet]:
-    """Drop rows of another year when that year's own sheet is imported too.
+    """Drop rows of a year that has its own sheet among the imported ones.
 
-    Year sheets often continue into January of the next year; those rows are
-    also in the next sheet, which is the one that counts.
+    Year sheets often continue into January of the next year, and a sheet
+    "2020-2023" may already contain the first months of 2024. Those rows are
+    also in the later sheet, which is the one that counts.
     """
-    years = {sheet_year(s) for s in sheets} - {None}
+    covered = {year for s in sheets for year in (sheet_years(s.name) or ())}
     result = []
     for sheet in sheets:
-        year = sheet_year(sheet)
-        rows = [r for r in sheet.rows if year is None or r.date.year == year or r.date.year not in years]
+        own = sheet_years(sheet.name) or ()
+        rows = [r for r in sheet.rows if r.date.year in own or r.date.year not in covered]
         result.append(ParsedSheet(sheet.name, rows, sheet.snapshots))
     return result
 
