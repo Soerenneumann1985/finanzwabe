@@ -1,0 +1,25 @@
+# Virtuelle Umgebung (wird aus requirements.txt neu erzeugt)
+.venv/
+
+# Python-Zwischendateien
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datenbank mit echten Finanzdaten – NIE ins Repo
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Echte Daten: alte Excel-Tabelle, Kontoauszüge
+*.xlsx
+*.xls
+*.csv
+
+# Geheimnisse und lokale Einstellungen
+.env
+
+# Editor-Einstellungen
+.idea/
+.vscode/
