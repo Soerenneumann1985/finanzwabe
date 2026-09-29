@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "dashboard" %}
+{% block title %}Übersicht{% endblock %}
+
+{% block hero %}
+<div class="eyebrow">Nettovermögen</div>
+<div class="hero-figure num">{{ wealth.worth.net|money }}</div>
+<div class="pill-row">
+  {% if worth_change is not none %}
+  <span class="chip">{{ icon("up" if worth_change >= 0 else "down", 14) }} {{ worth_change|money_signed }} seit Vormonat</span>
+  {% endif %}
+  <span class="chip">Guthaben {{ wealth.worth.assets|money }}</span>
+  <span class="chip">Schulden {{ wealth.worth.debts|money }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <section class="card" aria-labelledby="month-title">
+    <div class="card-head">
+      <h2 id="month-title">{{ month_names[report.month - 1] }} {{ report.year }}</h2>
+      <a href="{{ url_for('overview.month', year=report.year, month=report.month) }}">Details</a>
+    </div>
+    <div class="kpis">
+      {{ ui.kpi("Einnahmen", report.income|money, css="pos") }}
+      {{ ui.kpi("Ausgaben", report.expenses|money, "davon fix " ~ report.fixed|money) }}
+      {{ ui.kpi("Saldo", report.balance|money_signed, css="pos" if report.balance > 0 else ("neg" if report.balance < 0 else "")) }}
+      {{ ui.kpi("Sparquote", (report.savings_rate ~ " %") if report.savings_rate is not none else "–", "vom Einkommen übrig") }}
+    </div>
+  </section>
+
+  <section class="card install-hint" id="install-card" aria-live="polite">
+    <div class="card-body notice" style="background: none; align-items: center;">
+      {{ icon("phone", 24) }}
+      <span style="flex: 1">Installiere die App auf deinem Startbildschirm – sie startet dann wie eine normale App.</span>
+      <button class="btn small" type="button" id="install-button">Installieren</button>
+    </div>
+  </section>
+
+  {% if is_new %}
+  <section class="card">
+    <div class="card-head"><h2>Los geht's in drei Schritten</h2></div>
+    <ul class="list">
+      <li><a class="row" href="{{ url_for('accounts.index') }}">
+        <span class="hex"><span>1</span></span>
+        <div class="main"><div class="title">Kontostände eintragen</div><div class="sub">Girokonto, Sparkonto, Depot, Kreditkarte</div></div>
+        {{ icon("right") }}</a></li>
+      <li><a class="row" href="{{ url_for('transactions.new') }}">
+        <span class="hex"><span>2</span></span>
+        <div class="main"><div class="title">Erste Buchung erfassen</div><div class="sub">Einnahme oder Ausgabe mit Kategorie</div></div>
+        {{ icon("right") }}</a></li>
+      <li><a class="row" href="{{ url_for('loans.new') }}">
+        <span class="hex"><span>3</span></span>
+        <div class="main"><div class="title">Kredite hinzufügen</div><div class="sub">Restschuld und „schuldenfrei am …“ automatisch</div></div>
+        {{ icon("right") }}</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if report.budget_alerts %}
+  <section class="card" aria-labelledby="budget-title">
+    <div class="card-head"><h2 id="budget-title">Budgets im Blick</h2><a href="{{ url_for('categories.index') }}">Budgets</a></div>
+    {{ ui.category_bars(report.budget_alerts, report.year, report.month, budget_meter=true) }}
+  </section>
+  {% endif %}
+
+  <div class="grid cols-2">
+    <div class="stack">
+      <section class="card" aria-labelledby="history-title">
+        <div class="card-head">
+          <h2 id="history-title">Einnahmen und Ausgaben</h2>
+          <a href="{{ url_for('overview.current_year') }}">Jahr</a>
+        </div>
+        {{ ui.columns(column_chart(history, (report.year, report.month))) }}
+      </section>
+
+      <section class="card" aria-labelledby="recent-title">
+        <div class="card-head">
+          <h2 id="recent-title">Letzte Buchungen</h2>
+          <a href="{{ url_for('overview.month', year=report.year, month=report.month) }}">Alle</a>
+        </div>
+        {% if recent %}
+        <div class="list">
+          {% for t in recent %}{{ ui.tx_row(t, show_date=true) }}{% endfor %}
+        </div>
+        {% else %}
+        {{ ui.empty("Noch keine Buchungen.", url_for('transactions.new'), "Buchung erfassen") }}
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="card" aria-labelledby="cat-title">
+        <div class="card-head">
+          <h2 id="cat-title">Ausgaben nach Kategorie</h2>
+          <a href="{{ url_for('overview.month', year=report.year, month=report.month) }}">Alle</a>
+        </div>
+        {% if report.expense_rows and report.expenses > 0 %}
+        {{ ui.category_bars(report.expense_rows|selectattr("total")|list, report.year, report.month, limit=6) }}
+        {% else %}
+        <div class="empty"><p>In diesem Monat noch keine Ausgaben.</p></div>
+        {% endif %}
+      </section>
+
+      <section class="card" aria-labelledby="loan-title">
+        <div class="card-head">
+          <h2 id="loan-title">Kredite</h2>
+          <a href="{{ url_for('loans.index') }}">Alle</a>
+        </div>
+        {% if wealth.loans %}
+        <div class="bar-list">
+          {% for status in wealth.open_loans[:3] %}
+          <a class="bar-item" href="{{ url_for('loans.index') }}">{{ ui.loan_card_body(status) }}</a>
+          {% endfor %}
+          {% if not wealth.open_loans %}<p class="muted">Alle Kredite sind abbezahlt. Glückwunsch!</p>{% endif %}
+        </div>
+        {% if wealth.debt_free_date %}
+        <div class="card-foot muted">Schuldenfrei voraussichtlich <strong>{{ wealth.debt_free_date|month_year }}</strong></div>
+        {% endif %}
+        {% else %}
+        {{ ui.empty("Keine Kredite eingetragen.", url_for('loans.new'), "Kredit hinzufügen") }}
+        {% endif %}
+      </section>
+
+      <section class="card" aria-labelledby="acc-title">
+        <div class="card-head">
+          <h2 id="acc-title">Konten</h2>
+          <a href="{{ url_for('accounts.index') }}">Verwalten</a>
+        </div>
+        <div class="list">
+          {% for row in wealth.accounts %}
+          <a class="row" href="{{ url_for('accounts.edit', account_id=row.account.id) }}">
+            <div class="main"><div class="title">{{ row.account.name }}</div><div class="sub">{{ row.account.type_label }}</div></div>
+            <div class="end">{{ ui.colored(row.balance) }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}{{ "Kategorie bearbeiten" if category else "Neue Kategorie" }}{% endblock %}
+{% block content %}
+{% set kind = values.get("kind") or "expense" %}
+<section class="card">
+  <form class="form" method="post" novalidate>
+    {{ ui.csrf() }}
+    <div class="field{{ ' invalid' if errors.name }}">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" value="{{ values.get('name', '') }}" maxlength="60" required>
+      {{ ui.field_error(errors, "name") }}
+    </div>
+    <fieldset class="field" style="border: 0; padding: 0; margin: 0 0 16px">
+      <legend class="label-text">Art</legend>
+      <div class="segmented" data-category-kind>
+        {% for key, label in kinds.items() %}
+        <input type="radio" id="kind-{{ key }}" name="kind" value="{{ key }}"{% if kind == key %} checked{% endif %}{% if in_use %} disabled{% endif %}>
+        <label for="kind-{{ key }}">{{ label }}</label>
+        {% endfor %}
+      </div>
+      {% if in_use %}<div class="hint">Die Art lässt sich nicht mehr ändern, weil schon Buchungen diese Kategorie nutzen.</div>{% endif %}
+      {{ ui.field_error(errors, "kind") }}
+    </fieldset>
+    <div data-expense-only{% if kind != "expense" %} hidden{% endif %}>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="is_fixed" value="1"{% if values.get('is_fixed') %} checked{% endif %}>
+          <span>Fixkosten<br><span class="hint">Monatlich gleichbleibend, z. B. Miete oder Versicherung. Zählt in den Ausgaben trotzdem nur einmal.</span></span>
+        </label>
+      </div>
+      <div class="field{{ ' invalid' if errors.budget }}">
+        <label for="budget">Monatsbudget (optional)</label>
+        <div class="amount-input">
+          <input type="text" id="budget" name="budget" value="{{ values.get('budget', '') }}" inputmode="decimal" autocomplete="off" placeholder="z. B. 400">
+        </div>
+        <div class="hint">Ab 80 % warnt die Übersicht, über 100 % zeigt sie „Budget überschritten“.</div>
+        {{ ui.field_error(errors, "budget") }}
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Speichern</button>
+      <a class="btn secondary" href="{{ url_for('categories.index') }}">Abbrechen</a>
+    </div>
+  </form>
+  {% if category %}
+  <div class="card-foot">
+    <a class="btn danger small" href="{{ url_for('categories.delete', category_id=category.id) }}">{{ icon("trash") }} Kategorie löschen</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

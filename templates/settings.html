@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Einstellungen{% endblock %}
+{% block content %}
+<div class="grid cols-even">
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><h2>Dein Konto</h2></div>
+      <div class="card-body" style="padding-top: 0">
+        <p><strong>{{ g.user.email }}</strong><br><span class="muted small">dabei seit {{ g.user.created_at|date_de }}</span></p>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          {{ ui.csrf() }}
+          <button class="btn secondary small" type="submit">{{ icon("logout") }} Abmelden</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Passwort ändern</h2></div>
+      <form class="form" method="post" action="{{ url_for('settings.change_password') }}" style="padding-top: 0" novalidate>
+        {{ ui.csrf() }}
+        <div class="field{{ ' invalid' if errors.current }}">
+          <label for="current">Aktuelles Passwort</label>
+          <input type="password" id="current" name="current" autocomplete="current-password" required>
+          {{ ui.field_error(errors, "current") }}
+        </div>
+        <div class="field{{ ' invalid' if errors.password }}">
+          <label for="password">Neues Passwort</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" required>
+          {{ ui.field_error(errors, "password") }}
+        </div>
+        <div class="field{{ ' invalid' if errors.password2 }}">
+          <label for="password2">Neues Passwort wiederholen</label>
+          <input type="password" id="password2" name="password2" autocomplete="new-password" required>
+          {{ ui.field_error(errors, "password2") }}
+        </div>
+        <button class="btn" type="submit">Passwort ändern</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><h2>App auf dem Smartphone</h2></div>
+      <div class="card-body" style="padding-top: 0">
+        <p class="muted">Android (Chrome): Menü <strong>⋮</strong> → <strong>„App installieren“</strong> bzw. <strong>„Zum Startbildschirm hinzufügen“</strong>. Danach startet die Finanz-App wie eine normale App im Vollbild.</p>
+        <p class="muted small">iPhone (Safari): Teilen-Symbol → „Zum Home-Bildschirm“.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Deine Daten</h2></div>
+      <div class="card-body" style="padding-top: 0">
+        <p class="muted">Alle Buchungen als CSV-Datei, die du direkt in Excel öffnen kannst.</p>
+        <a class="btn secondary" href="{{ url_for('settings.export_csv') }}">{{ icon("download") }} Export herunterladen</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Konto löschen</h2></div>
+      <form class="form" method="post" action="{{ url_for('settings.delete_account') }}" style="padding-top: 0"
+            data-confirm="Wirklich ALLE Daten endgültig löschen? Das lässt sich nicht rückgängig machen.">
+        {{ ui.csrf() }}
+        <p class="muted">Löscht dein Konto mit allen Konten, Buchungen, Krediten und Daueraufträgen endgültig.</p>
+        <div class="field{{ ' invalid' if errors.delete }}">
+          <label for="delete-password">Passwort zur Bestätigung</label>
+          <input type="password" id="delete-password" name="password" autocomplete="current-password" required>
+          {{ ui.field_error(errors, "delete") }}
+        </div>
+        <button class="btn danger" type="submit">{{ icon("trash") }} Alles löschen</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

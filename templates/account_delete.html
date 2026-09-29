@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% block title %}Konto löschen{% endblock %}
+{% block content %}
+<section class="card">
+  <form class="form" method="post">
+    {{ ui.csrf() }}
+    <h2 style="margin-bottom: 10px">„{{ account.name }}“ löschen?</h2>
+    {% if count %}
+    <div class="notice warn" style="margin-bottom: 16px">
+      {{ icon("alert") }}
+      <span>Damit werden auch <strong>{{ count }} Buchung{{ "en" if count != 1 }}</strong> dieses Kontos gelöscht. Das lässt sich nicht rückgängig machen. Exportiere vorher bei Bedarf deine Daten.</span>
+    </div>
+    {% else %}
+    <p class="muted">Zu diesem Konto gibt es keine Buchungen.</p>
+    {% endif %}
+    <div class="actions">
+      <button class="btn danger" type="submit">{{ icon("trash") }} Endgültig löschen</button>
+      <a class="btn secondary" href="{{ url_for('accounts.edit', account_id=account.id) }}">Abbrechen</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

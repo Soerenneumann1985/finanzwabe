@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "finanz-app-demo",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["serve.py", "--demo", "--local-only", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}

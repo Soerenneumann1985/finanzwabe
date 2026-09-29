@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "more" %}
+{% block title %}Daueraufträge{% endblock %}
+{% block hero %}
+<div class="eyebrow">Daueraufträge pro Monat</div>
+<div class="hero-figure num">{{ outgoing|money }}</div>
+<div class="pill-row">
+  <span class="chip">Eingänge {{ income|money }}</span>
+  <span class="chip">{{ orders|selectattr("active")|list|length }} aktiv</span>
+</div>
+{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Alle Daueraufträge</h2>
+    <a class="btn small" href="{{ url_for('recurring.new') }}">{{ icon("plus") }} Neu</a>
+  </div>
+  {% if orders %}
+  <div class="list">
+    {% for o in orders %}
+    <a class="row" href="{{ url_for('recurring.edit', order_id=o.id) }}">
+      {{ ui.hexbadge(o.category) }}
+      <div class="main">
+        <div class="title">{{ o.description or o.category.name }}</div>
+        <div class="sub">
+          {% if o.active %}am {{ o.day_of_month }}. jedes Monats · nächste {{ o.next_date|date_de }}{% else %}pausiert{% endif %}
+          · {{ o.account.name }}
+        </div>
+      </div>
+      <div class="end">{{ ui.amount(o.amount_cents, o.category.kind) }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty("Miete, Gehalt, Abos oder Kreditraten als Dauerauftrag anlegen – dann tragen sie sich jeden Monat selbst ein.", url_for('recurring.new'), "Dauerauftrag anlegen") }}
+  {% endif %}
+</section>
+{% endblock %}

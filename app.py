@@ -10,9 +10,11 @@ import os
 import secrets
 from pathlib import Path
 
-from flask import Flask, abort, g, render_template, request, session, url_for
+from flask import Flask, abort, render_template, request, session, url_for
 
+import charts
 import models
+from icons import icon
 from money import format_cents, format_cents_short, format_input, format_percent_bp
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -123,16 +125,20 @@ def _register_template_helpers(app: Flask) -> None:
             version = 0
         return url_for("static", filename=filename, v=version)
 
+    app.jinja_env.globals.update(
+        csrf_token=csrf_token,
+        static_url=static_url,
+        icon=icon,
+        column_chart=charts.column_chart,
+        line_chart=charts.line_chart,
+        app_name=APP_NAME,
+        month_names=MONTH_NAMES,
+        month_short=MONTH_SHORT,
+    )
+
     @app.context_processor
-    def inject_globals():
-        return {
-            "csrf_token": csrf_token,
-            "static_url": static_url,
-            "app_name": APP_NAME,
-            "today": dt.date.today(),
-            "month_names": MONTH_NAMES,
-            "month_short": MONTH_SHORT,
-        }
+    def inject_today():
+        return {"today": dt.date.today()}
 
     app.jinja_env.filters.update(
         money=format_cents,
@@ -165,7 +171,3 @@ def _register_error_pages(app: Flask) -> None:
     def too_large(_error):
         return render_template("error.html", code=413, title="Datei zu groß",
                                message="Die Datei darf höchstens 5 MB groß sein."), 413
-
-
-def current_user_id() -> int:
-    return g.user.id

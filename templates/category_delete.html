@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% block title %}Kategorie löschen{% endblock %}
+{% block content %}
+<section class="card">
+  <form class="form" method="post">
+    {{ ui.csrf() }}
+    <h2 style="margin-bottom: 10px">„{{ category.name }}“ löschen?</h2>
+    {% if error %}<div class="flash error" style="margin-bottom: 14px">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+    {% if usage %}
+    <p class="muted">{{ usage }} Buchung{{ "en" if usage != 1 }} bzw. Dauerauftr{{ "äge" if usage != 1 else "ag" }} nutzen diese Kategorie. Wohin sollen sie verschoben werden?</p>
+    {% if targets %}
+    <div class="field">
+      <label for="target_id">Neue Kategorie</label>
+      <select id="target_id" name="target_id" required>
+        {% for c in targets %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    {% else %}
+    <div class="notice warn">{{ icon("alert") }}<span>Es gibt keine andere Kategorie derselben Art. Lege zuerst eine an.</span></div>
+    {% endif %}
+    {% else %}
+    <p class="muted">Diese Kategorie wird nirgends verwendet.</p>
+    {% endif %}
+    <div class="actions">
+      {% if not usage or targets %}
+      <button class="btn danger" type="submit">{{ icon("trash") }} {{ "Verschieben und löschen" if usage else "Löschen" }}</button>
+      {% endif %}
+      <a class="btn secondary" href="{{ url_for('categories.edit', category_id=category.id) }}">Abbrechen</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

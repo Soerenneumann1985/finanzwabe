@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "more" %}
+{% set band_short = true %}
+{% block title %}Mehr{% endblock %}
+{% block hero %}<h1>Mehr</h1>{% endblock %}
+{% block content %}
+{% set tiles = [
+  ("overview.current_year", "chart", "Jahresübersicht", "Monate und Kategorien"),
+  ("loans.index", "loan", "Kredite", "Restschuld und Prognose"),
+  ("recurring.index", "repeat", "Daueraufträge", "Buchen sich selbst"),
+  ("accounts.index", "wallet", "Konten", "Kontostände pflegen"),
+  ("categories.index", "tag", "Kategorien", "Fixkosten und Budgets"),
+  ("overview.search", "search", "Suche", "Alle Buchungen"),
+  ("settings.export_csv", "download", "Export", "CSV für Excel"),
+  ("settings.index", "settings", "Einstellungen", "Passwort und Daten"),
+] %}
+<div class="tiles">
+  {% for endpoint, icon_name, label, hint in tiles %}
+  <a class="tile" href="{{ url_for(endpoint) }}">
+    <span class="hex">{{ icon(icon_name) }}</span>
+    <span>{{ label }}</span>
+    <small>{{ hint }}</small>
+  </a>
+  {% endfor %}
+</div>
+<form method="post" action="{{ url_for('auth.logout') }}" style="margin-top: 20px">
+  {{ ui.csrf() }}
+  <button class="btn secondary block" type="submit">{{ icon("logout") }} Abmelden</button>
+</form>
+{% endblock %}

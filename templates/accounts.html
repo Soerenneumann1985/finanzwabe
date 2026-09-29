@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "more" %}
+{% block title %}Konten{% endblock %}
+{% block hero %}
+<div class="eyebrow">Summe aller Konten</div>
+<div class="hero-figure num">{{ wealth.accounts_total|money }}</div>
+<div class="hero-sub">Kredite siehst du unter <a href="{{ url_for('loans.index') }}">Kredite</a>.</div>
+{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>Konten</h2>
+    <a class="btn small" href="{{ url_for('accounts.new') }}">{{ icon("plus") }} Konto</a>
+  </div>
+  {% if wealth.accounts %}
+  <div class="list">
+    {% for row in wealth.accounts %}
+    <a class="row" href="{{ url_for('accounts.edit', account_id=row.account.id) }}">
+      <span class="hex">{{ icon("card" if row.account.type == "credit_card" else "wallet", 18) }}</span>
+      <div class="main">
+        <div class="title">{{ row.account.name }}</div>
+        <div class="sub">{{ row.account.type_label }}{% if row.free_limit is not none %} · frei {{ row.free_limit|money }}{% endif %}</div>
+      </div>
+      <div class="end">{{ ui.colored(row.balance) }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty("Noch keine Konten.", url_for('accounts.new'), "Konto anlegen") }}
+  {% endif %}
+</section>
+{% endblock %}

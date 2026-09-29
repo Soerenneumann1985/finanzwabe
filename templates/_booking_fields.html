@@ -1,0 +1,74 @@
+{# Fields shared by the transaction and the standing order form.
+   Needs: values, errors, accounts, categories, suggestions #}
+{% import "_macros.html" as ui %}
+{% set kind = values.get("kind") or "expense" %}
+{% set kind_labels = {"expense": "Ausgabe", "income": "Einnahme", "transfer": "Umbuchung"} %}
+
+<fieldset class="field" style="border: 0; padding: 0; margin: 0 0 16px">
+  <legend class="label-text">Art</legend>
+  <div class="segmented" data-kind-switch>
+    {% for key, label in kind_labels.items() %}
+    <input type="radio" id="kind-{{ key }}" name="kind" value="{{ key }}"{% if kind == key %} checked{% endif %}>
+    <label for="kind-{{ key }}">{{ label }}</label>
+    {% endfor %}
+  </div>
+</fieldset>
+
+<div class="field{{ ' invalid' if errors.amount }}">
+  <label for="amount">Betrag</label>
+  <div class="amount-input">
+    <input type="text" id="amount" name="amount" value="{{ values.get('amount', '') }}" inputmode="decimal"
+           autocomplete="off" placeholder="0,00" required{% if not values.get('amount') %} autofocus{% endif %}
+           aria-describedby="amount-hint">
+  </div>
+  <div class="hint" id="amount-hint">Immer positiv eingeben. Eine Erstattung als Ausgabe mit Minus, z. B. „-15,00“.</div>
+  {{ ui.field_error(errors, "amount") }}
+</div>
+
+<div class="field">
+  <label for="description">Beschreibung</label>
+  <input type="text" id="description" name="description" value="{{ values.get('description', '') }}"
+         maxlength="200" list="description-list" autocomplete="off" placeholder="z. B. Wocheneinkauf">
+  <datalist id="description-list">
+    {% for text in suggestions %}<option value="{{ text }}">{% endfor %}
+  </datalist>
+  <script type="application/json" id="suggestions">{{ suggestions|tojson }}</script>
+</div>
+
+<div class="field{{ ' invalid' if errors.category_id }}">
+  <label for="category_id">Kategorie</label>
+  <select id="category_id" name="category_id" required data-category-select>
+    <option value="">Bitte wählen …</option>
+    {% for key, label in kind_labels.items() %}
+    <optgroup label="{{ label }}" data-kind="{{ key }}">
+      {% for c in categories if c.kind == key %}
+      <option value="{{ c.id }}"{% if values.get('category_id')|string == c.id|string %} selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </optgroup>
+    {% endfor %}
+  </select>
+  {{ ui.field_error(errors, "category_id") }}
+</div>
+
+<div class="form-grid two">
+  <div class="field{{ ' invalid' if errors.account_id }}">
+    <label for="account_id" data-account-label data-default="Konto" data-transfer="Von Konto">{{ "Von Konto" if kind == "transfer" else "Konto" }}</label>
+    <select id="account_id" name="account_id" required>
+      {% for a in accounts %}
+      <option value="{{ a.id }}"{% if values.get('account_id')|string == a.id|string %} selected{% endif %}>{{ a.name }}</option>
+      {% endfor %}
+    </select>
+    {{ ui.field_error(errors, "account_id") }}
+  </div>
+
+  <div class="field{{ ' invalid' if errors.counter_account_id }}" data-transfer-only{% if kind != "transfer" %} hidden{% endif %}>
+    <label for="counter_account_id">Auf Konto</label>
+    <select id="counter_account_id" name="counter_account_id">
+      <option value="">– kein eigenes Konto (z. B. Kreditrate) –</option>
+      {% for a in accounts %}
+      <option value="{{ a.id }}"{% if values.get('counter_account_id')|string == a.id|string %} selected{% endif %}>{{ a.name }}</option>
+      {% endfor %}
+    </select>
+    {{ ui.field_error(errors, "counter_account_id") }}
+  </div>
+</div>

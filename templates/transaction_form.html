@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% block title %}{{ "Buchung bearbeiten" if transaction else "Neue Buchung" }}{% endblock %}
+{% block content %}
+<section class="card">
+  <form class="form" method="post" novalidate>
+    {{ ui.csrf() }}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% include "_booking_fields.html" %}
+    <div class="field{{ ' invalid' if errors.date }}">
+      <label for="date">Datum</label>
+      <input type="date" id="date" name="date" value="{{ values.get('date', '') }}" required>
+      {{ ui.field_error(errors, "date") }}
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Speichern</button>
+      {% if not transaction %}
+      <button class="btn secondary" type="submit" name="again" value="1">Speichern &amp; weitere</button>
+      {% endif %}
+      <a class="btn secondary" href="{{ next_url or url_for('overview.current_month') }}">Abbrechen</a>
+    </div>
+  </form>
+  {% if transaction %}
+  <div class="card-foot">
+    <form method="post" action="{{ url_for('transactions.delete', transaction_id=transaction.id) }}"
+          data-confirm="Diese Buchung wirklich löschen?">
+      {{ ui.csrf() }}
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <button class="btn danger small" type="submit">{{ icon("trash") }} Buchung löschen</button>
+    </form>
+    {% if transaction.recurring_id %}<p class="small muted" style="margin-top: 10px">Automatisch gebucht aus einem Dauerauftrag.</p>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "year" %}
+{% block title %}Jahr {{ report.year }}{% endblock %}
+
+{% block hero %}
+<div class="month-nav">
+  <a class="round-btn" href="{{ url_for('overview.year', year=report.year - 1) }}" aria-label="Vorheriges Jahr">{{ icon("left") }}</a>
+  <div class="title">{{ report.year }}</div>
+  <a class="round-btn" href="{{ url_for('overview.year', year=report.year + 1) }}" aria-label="Nächstes Jahr">{{ icon("right") }}</a>
+</div>
+<div class="eyebrow">Saldo des Jahres</div>
+<div class="hero-figure num">{{ report.balance|money_signed }}</div>
+<div class="pill-row">
+  <span class="chip">Einnahmen {{ report.income|money }}</span>
+  <span class="chip">Ausgaben {{ report.expenses|money }}</span>
+  {% if report.savings_rate is not none %}<span class="chip">Sparquote {{ report.savings_rate }} %</span>{% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <section class="card">
+    <div class="kpis">
+      {{ ui.kpi("Einnahmen", report.income|money, ui.change(report.income_change, true) if report.has_previous else "", "pos") }}
+      {{ ui.kpi("Ausgaben", report.expenses|money, ui.change(report.expense_change, false) if report.has_previous else "") }}
+      {{ ui.kpi("Fixkosten", report.fixed|money) }}
+      {{ ui.kpi("Ø Ausgaben pro Monat", report.average_expenses|money if report.months_elapsed else "–", "über " ~ report.months_elapsed ~ " Monate") }}
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="chart-title">
+    <div class="card-head"><h2 id="chart-title">Monatsverlauf {{ report.year }}</h2></div>
+    {{ ui.columns(column_chart(report.months, (today.year, today.month))) }}
+  </section>
+
+  <div class="grid cols-even">
+    <section class="card" aria-labelledby="table-title">
+      <div class="card-head"><h2 id="table-title">Monate</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Monat</th><th scope="col">Einnahmen</th><th scope="col">Ausgaben</th><th scope="col">Saldo</th></tr></thead>
+          <tbody>
+            {% for m in report.months %}
+            <tr>
+              <td><a href="{{ url_for('overview.month', year=m.year, month=m.month) }}">{{ month_names[m.month - 1] }}</a></td>
+              <td>{{ m.income|money }}</td>
+              <td>{{ m.expenses|money }}</td>
+              <td>{{ ui.colored(m.balance) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot><tr><td>Summe</td><td>{{ report.income|money }}</td><td>{{ report.expenses|money }}</td><td>{{ ui.colored(report.balance) }}</td></tr></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="cat-title">
+      <div class="card-head"><h2 id="cat-title">Ausgaben nach Kategorie</h2></div>
+      {% if report.expense_rows %}
+      {{ ui.category_bars(report.expense_rows) }}
+      {% else %}
+      <div class="empty"><p>Keine Ausgaben in {{ report.year }}.</p></div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

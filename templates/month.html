@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "month" %}
+{% set here = url_for('overview.month', year=report.year, month=report.month) %}
+{% block title %}{{ month_names[report.month - 1] }} {{ report.year }}{% endblock %}
+
+{% block hero %}
+<div class="month-nav">
+  <a class="round-btn" href="{{ url_for('overview.month', year=previous.year, month=previous.month) }}" aria-label="Vorheriger Monat">{{ icon("left") }}</a>
+  <div class="title">{{ month_names[report.month - 1] }} {{ report.year }}</div>
+  <a class="round-btn" href="{{ url_for('overview.month', year=following.year, month=following.month) }}" aria-label="Nächster Monat">{{ icon("right") }}</a>
+</div>
+<div class="eyebrow">Saldo des Monats</div>
+<div class="hero-figure num">{{ report.balance|money_signed }}</div>
+<div class="pill-row">
+  <span class="chip">Einnahmen {{ report.income|money }}</span>
+  <span class="chip">Ausgaben {{ report.expenses|money }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <section class="card">
+    <div class="kpis">
+      {{ ui.kpi("Einnahmen", report.income|money, css="pos") }}
+      {{ ui.kpi("Ausgaben", report.expenses|money) }}
+      {{ ui.kpi("Fixkosten", report.fixed|money, "in den Ausgaben enthalten") }}
+      {{ ui.kpi("Sparquote", (report.savings_rate ~ " %") if report.savings_rate is not none else "–") }}
+    </div>
+  </section>
+
+  <div class="grid cols-2">
+    <section class="card" aria-labelledby="tx-title">
+      <div class="card-head">
+        <h2 id="tx-title">Buchungen{% if selected %}: {{ selected.name }}{% endif %}</h2>
+        {% set new_date = today.isoformat() if (today.year, today.month) == (report.year, report.month) else first.isoformat() %}
+        <a class="btn small" href="{{ url_for('transactions.new', datum=new_date, next=here) }}">{{ icon("plus") }} Neu</a>
+      </div>
+      {% if selected %}
+      <div class="card-body" style="padding-top: 0">
+        <a class="chip" style="background: var(--royal-soft); color: var(--text)" href="{{ here }}">{{ icon("close", 14) }} Filter aufheben</a>
+      </div>
+      {% endif %}
+      {% if days %}
+      <div class="list">
+        {% for day, items, day_sum in days %}
+        <div class="day-head"><span>{{ day|weekday }}, {{ day|date_de }}</span><span class="num">{{ day_sum|money_signed if day_sum else "" }}</span></div>
+        {% for t in items %}{{ ui.tx_row(t, next_url=request.full_path) }}{% endfor %}
+        {% endfor %}
+      </div>
+      {% else %}
+      {{ ui.empty("Keine Buchungen in diesem Monat.", url_for('transactions.new', datum=new_date, next=here), "Buchung erfassen") }}
+      {% endif %}
+    </section>
+
+    <div class="stack">
+      <section class="card" aria-labelledby="exp-title">
+        <div class="card-head"><h2 id="exp-title">Ausgaben nach Kategorie</h2></div>
+        {% if report.expense_rows %}
+        {{ ui.category_bars(report.expense_rows, report.year, report.month) }}
+        {% else %}
+        <div class="empty"><p>Keine Ausgaben.</p></div>
+        {% endif %}
+      </section>
+
+      {% if report.income_rows %}
+      <section class="card" aria-labelledby="inc-title">
+        <div class="card-head"><h2 id="inc-title">Einnahmen</h2></div>
+        {{ ui.category_bars(report.income_rows, report.year, report.month) }}
+      </section>
+      {% endif %}
+
+      {% if report.transfer_rows %}
+      <section class="card" aria-labelledby="tr-title">
+        <div class="card-head"><h2 id="tr-title">Umbuchungen</h2></div>
+        <p class="small muted" style="padding: 0 16px">Sparen, Tilgung und Umbuchungen zählen weder als Einnahme noch als Ausgabe.</p>
+        {{ ui.category_bars(report.transfer_rows, report.year, report.month) }}
+      </section>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

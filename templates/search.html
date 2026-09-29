@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% block title %}Suche{% endblock %}
+{% block hero %}
+<h1>Suche</h1>
+<form method="get" action="{{ url_for('overview.search') }}" role="search" style="margin-top: 12px">
+  <label class="visually-hidden" for="q">Suchbegriff</label>
+  <input type="search" id="q" name="q" value="{{ query }}" placeholder="Beschreibung, Kategorie oder Betrag" autofocus>
+</form>
+{% endblock %}
+{% block content %}
+<section class="card">
+  {% if not query %}
+  <div class="empty"><p>Suche nach „Rewe“, „Versicherung“ oder einem Betrag wie „49,99“.</p></div>
+  {% elif results %}
+  <div class="card-head"><h2>{{ results|length }} Treffer{% if results|length == 200 %} (die neuesten 200){% endif %}</h2></div>
+  <div class="list">
+    {% for t in results %}{{ ui.tx_row(t, next_url=request.full_path, show_date=true) }}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty"><p>Keine Buchungen zu „{{ query }}“ gefunden.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

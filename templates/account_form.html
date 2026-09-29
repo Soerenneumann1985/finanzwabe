@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}{{ "Konto bearbeiten" if account else "Neues Konto" }}{% endblock %}
+{% block content %}
+<section class="card">
+  <form class="form" method="post" novalidate>
+    {{ ui.csrf() }}
+    <div class="field{{ ' invalid' if errors.name }}">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" value="{{ values.get('name', '') }}" maxlength="80" placeholder="z. B. Girokonto Sparkasse" required>
+      {{ ui.field_error(errors, "name") }}
+    </div>
+    <div class="field{{ ' invalid' if errors.type }}">
+      <label for="type">Kontoart</label>
+      <select id="type" name="type" data-account-type>
+        {% for key, label in account_types.items() %}
+        <option value="{{ key }}"{% if values.get('type') == key %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {{ ui.field_error(errors, "type") }}
+    </div>
+    <div class="field{{ ' invalid' if errors.balance }}">
+      <label for="balance">Aktueller Kontostand</label>
+      <div class="amount-input">
+        <input type="text" id="balance" name="balance" value="{{ values.get('balance', '') }}" inputmode="decimal" autocomplete="off">
+      </div>
+      <div class="hint">So wie bei deiner Bank. Schulden (Dispo, Kreditkarte) mit Minus, z. B. „-250,00“. Neue Buchungen verändern den Stand danach automatisch.</div>
+      {{ ui.field_error(errors, "balance") }}
+    </div>
+    <div class="field{{ ' invalid' if errors.credit_limit }}" data-credit-only{% if values.get('type') != 'credit_card' %} hidden{% endif %}>
+      <label for="credit_limit">Kreditrahmen</label>
+      <div class="amount-input">
+        <input type="text" id="credit_limit" name="credit_limit" value="{{ values.get('credit_limit', '') }}" inputmode="decimal" autocomplete="off" placeholder="z. B. 2000">
+      </div>
+      <div class="hint">Daraus berechnet die App den freien Rahmen.</div>
+      {{ ui.field_error(errors, "credit_limit") }}
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Speichern</button>
+      <a class="btn secondary" href="{{ url_for('accounts.index') }}">Abbrechen</a>
+    </div>
+  </form>
+  {% if account %}
+  <div class="card-foot">
+    <a class="btn danger small" href="{{ url_for('accounts.delete', account_id=account.id) }}">{{ icon("trash") }} Konto löschen</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

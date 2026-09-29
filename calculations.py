@@ -304,6 +304,11 @@ def payoff_plan(remaining_cents: int, monthly_rate_cents: int, annual_rate_bp: i
     return PayoffPlan(months, interest_sum)
 
 
+def repaid_amount(start_amount_cents: int, remaining_cents: int) -> int:
+    """How much of the original debt is already repaid (never negative)."""
+    return max(start_amount_cents - remaining_cents, 0)
+
+
 def paid_off_percent(start_amount_cents: int, remaining_cents: int) -> int:
     """Progress of a loan in whole percent (0 to 100)."""
     if start_amount_cents <= 0:

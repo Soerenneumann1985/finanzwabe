@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "loans" %}
+{% block title %}Kredite{% endblock %}
+{% block hero %}
+<div class="eyebrow">Restschuld aller Kredite</div>
+<div class="hero-figure num">{{ wealth.loan_debt|money }}</div>
+<div class="pill-row">
+  {% if wealth.debt_free_date %}<span class="chip">{{ icon("check", 14) }} Schuldenfrei {{ wealth.debt_free_date|month_year }}</span>{% endif %}
+  <span class="chip">{{ wealth.open_loans|length }} offen</span>
+</div>
+{% endblock %}
+{% block content %}
+<div class="stack">
+  <div class="actions" style="margin-top: 0; justify-content: flex-end">
+    <a class="btn on-band small" href="{{ url_for('loans.new') }}">{{ icon("plus") }} Kredit hinzufügen</a>
+  </div>
+  {% for s in wealth.loans %}
+  {% set loan = s.loan %}
+  <section class="card">
+    <div class="card-head">
+      <h2>{{ loan.name }}</h2>
+      <a href="{{ url_for('loans.edit', loan_id=loan.id) }}">Bearbeiten</a>
+    </div>
+    <div class="bar-list">
+      <div class="bar-item">{{ ui.loan_card_body(s, show_name=false) }}</div>
+    </div>
+    <div class="kpis">
+      {{ ui.kpi("Monatsrate", loan.monthly_rate_cents|money) }}
+      {{ ui.kpi("Zinssatz", loan.interest_rate_bp|percent_bp if loan.interest_rate_bp else "ohne Zinsen") }}
+      {{ ui.kpi("Gezahlte Raten", (s.months_paid ~ " von " ~ s.total_rates) if s.total_rates else s.months_paid) }}
+      {{ ui.kpi("Nächste Rate", s.next_rate_date|date_de if s.next_rate_date else "–") }}
+      {{ ui.kpi("Schuldenfrei", s.payoff_date|month_year if s.payoff_date else ("erledigt" if s.is_paid_off else "nie")) }}
+      {{ ui.kpi("Noch zu zahlende Zinsen", s.plan.total_interest|money if s.plan else "–") }}
+      {{ ui.kpi("Ursprünglich", loan.start_amount_cents|money, "erste Rate " ~ loan.start_date|date_de) }}
+      {{ ui.kpi("Getilgt", s.repaid|money) }}
+    </div>
+  </section>
+  {% else %}
+  <section class="card">
+    {{ ui.empty("Trage deine Kredite ein: Die App rechnet Restschuld, Tilgung und dein Datum „schuldenfrei am …“ automatisch aus.", url_for('loans.new'), "Kredit hinzufügen") }}
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+# Finanz-App
+
+Persönliche Finanz-App im Königsblau-Design mit 3D-Wabenstruktur. Sie ersetzt eine selbst gebaute
+Excel-Tabelle und beantwortet drei Fragen auf einen Blick:
+
+1. **Wofür gebe ich mein Geld aus?** Einnahmen und Ausgaben pro Monat, nach Kategorien, mit Budgets.
+2. **Wie stehe ich insgesamt da?** Guthaben minus Schulden = Nettovermögen, mit Verlauf.
+3. **Wie schnell baue ich Schulden ab?** Restschuld, Tilgung und „schuldenfrei am …“ pro Kredit.
+
+Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installierbare Web-App (PWA).
+
+## Funktionen
+
+| Bereich | Was die App macht |
+| --- | --- |
+| Übersicht | Nettovermögen, Monatszahlen, Sparquote, Budget-Warnungen, 6-Monats-Diagramm, letzte Buchungen |
+| Monat | Buchungen nach Tagen, Summen je Kategorie, Fixkosten, Filter per Klick auf eine Kategorie |
+| Jahr | 12-Monats-Diagramm, Monatstabelle, Kategorien mit Monatsdurchschnitt, Vergleich zum Vorjahr |
+| Vermögen | Konten, Kreditkarten mit freiem Rahmen, Kredite, Verlauf des Nettovermögens |
+| Kredite | Restschuld, Fortschritt, nächste Rate, Zinsen, Prognose „schuldenfrei am …“ |
+| Buchungen | Ausgabe, Einnahme oder Umbuchung zwischen eigenen Konten; Vorschläge aus früheren Buchungen |
+| Daueraufträge | Miete, Gehalt, Abos, Kreditraten buchen sich jeden Monat selbst |
+| Kategorien | Fixkosten-Haken (zählt trotzdem nur einmal) und Monatsbudget mit Warnung ab 80 % |
+| Suche & Export | Suche nach Text, Kategorie oder Betrag; CSV-Export, der direkt in Excel aufgeht |
+| Konto | Mehrere Nutzer mit Login, Passwort ändern, alle Daten löschen |
+
+## Schnellstart (Windows)
+
+Doppelklick auf **`Finanz-App starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
+selbst ein. Danach öffnet sich der Browser mit `http://localhost:8000`. Registriere dich und leg los.
+
+Oder im Terminal im Projektordner:
+
+```
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python serve.py
+```
+
+### Demo mit Beispieldaten
+
+```
+.venv\Scripts\python serve.py --demo
+```
+
+Startet mit einer eigenen Demo-Datenbank (`instance/demo.db`) und erfundenen Daten für vier Monate.
+Die Demo-Anmeldung steht im Startfenster (und in `seed.py`). Deine echten Daten bleiben unberührt.
+
+## Auf dem Smartphone nutzen
+
+### Variante A: Zuhause im WLAN (sofort, kostenlos)
+
+1. Am PC `Finanz-App starten.bat` ausführen. Das Fenster zeigt die Adresse fürs Handy,
+   z. B. `http://192.168.178.23:8000`.
+2. Beim ersten Start fragt die Windows-Firewall nach: **„Private Netzwerke“ erlauben**.
+3. Am Handy (gleiches WLAN) die Adresse in Chrome öffnen und anmelden.
+4. Chrome-Menü **⋮ → „Zum Startbildschirm hinzufügen“**. Das Wabensymbol liegt dann auf dem Startbildschirm.
+
+Einschränkung: Das funktioniert nur, solange der PC läuft und du im selben WLAN bist. Ohne HTTPS legt
+Chrome eine Verknüpfung an statt einer vollwertig installierten App.
+
+### Variante B: Online mit HTTPS (überall, echte App-Installation)
+
+Empfohlen: **PythonAnywhere** mit Serverstandort EU (`eu.pythonanywhere.com`). SQLite-Daten bleiben
+dort dauerhaft gespeichert, HTTPS ist inklusive.
+
+1. Konto auf eu.pythonanywhere.com anlegen und das Projekt hochladen (am einfachsten per GitHub).
+2. In einer Bash-Konsole dort: `python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt`
+3. Unter *Web* eine neue Web-App mit *Manual configuration (Python 3.12)* anlegen,
+   als Virtualenv `.venv` eintragen und in der WSGI-Datei `from wsgi import application` verwenden.
+4. Unter *Web → Environment variables* bzw. in der WSGI-Datei setzen:
+   - `FINANZ_SECRET_KEY` = langer Zufallswert (`python -c "import secrets; print(secrets.token_hex(32))"`)
+   - `FINANZ_HTTPS=1` (Login-Cookie nur über HTTPS)
+   - `FINANZ_BEHIND_PROXY=1`
+   - `FINANZ_ALLOW_REGISTRATION=0`, wenn nur du dich anmelden sollst (vorher selbst registrieren)
+5. *Force HTTPS* einschalten. Danach am Handy die Adresse öffnen, Chrome bietet **„App installieren“** an.
+
+### Variante C: Google Play Store (später)
+
+Sobald die App online mit HTTPS läuft, erzeugt [PWABuilder](https://www.pwabuilder.com) daraus ein
+Android-Paket (Trusted Web Activity) für den Play Store. Am Code ändert sich dafür nichts.
+
+## Einstellungen über Umgebungsvariablen
+
+| Variable | Bedeutung | Standard |
+| --- | --- | --- |
+| `FINANZ_DATABASE_URL` | Datenbank | `sqlite:///instance/finanz.db` |
+| `FINANZ_SECRET_KEY` | Schlüssel für das Login-Cookie | wird in `instance/secret_key` erzeugt |
+| `FINANZ_ALLOW_REGISTRATION` | `0` = keine neuen Registrierungen | `1` |
+| `FINANZ_HTTPS` | `1` = Cookie nur über HTTPS | aus |
+| `FINANZ_BEHIND_PROXY` | `1` hinter einem Hosting-Proxy | aus |
+
+## Tests
+
+```
+.venv\Scripts\python -m pytest
+```
+
+Über 100 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
+ganze Web-App (Login, alle Seiten, Buchungen, Umbuchungen, Daueraufträge, Datentrennung zwischen Nutzern,
+Schutz vor gefälschten Formularen).
+
+## Projektstruktur
+
+```
+finanz-app/
+├── app.py              # Flask-App: Konfiguration, Sicherheit, Vorlagen-Helfer
+├── models.py           # Tabellen (SQLAlchemy): user, account, category, transaction, recurring, loan, net_worth_snapshot
+├── calculations.py     # ALLE Rechenregeln als reine Funktionen (ohne Datenbank, ohne Web)
+├── services.py         # Datenbankabfragen pro Nutzer, reicht Werte an calculations.py weiter
+├── money.py            # Beträge lesen ("1.234,56") und anzeigen
+├── charts.py           # Positionen für die Diagramme (reines Layout)
+├── icons.py            # Symbole als SVG
+├── views/              # Seiten, eine Datei pro Bereich (auth, overview, transactions, …)
+├── templates/          # HTML-Vorlagen (Jinja)
+├── static/             # CSS, JavaScript, Wabenmuster, App-Symbole, Manifest, Service Worker
+├── tools/make_graphics.py  # erzeugt Wabenmuster und App-Symbole neu
+├── seed.py             # erfundene Demo-Daten
+├── serve.py            # Start für den Alltag (PC + Handy im WLAN)
+├── wsgi.py             # Start beim Hosting
+└── tests/
+```
+
+## Rechenregeln
+
+Alle Regeln stehen in `calculations.py`, jede mit eigenem Test. Beträge sind immer ganze Cent.
+
+| Wert | Regel |
+| --- | --- |
+| Einnahmen / Ausgaben | Summe der Buchungen mit Kategorie-Art Einnahme bzw. Ausgabe |
+| Fixkosten | Ausgaben mit Fixkosten-Haken, jede Buchung zählt genau einmal |
+| Saldo | Einnahmen minus Ausgaben, Umbuchungen zählen nicht |
+| Kontostand | Startwert + Buchungen auf dem Konto − Umbuchungen, die dort eingehen |
+| Freier Kreditkartenrahmen | Limit + Kontostand (Stand ist negativ) |
+| Restschuld ohne Zinsen | Startbetrag − Rate × gezahlte Monate, mindestens 0 (wie in Excel) |
+| Restschuld mit Zinsen | jeden Monat Zinsen auf die Restschuld aufschlagen, dann Rate abziehen |
+| Nettovermögen | positive Kontostände − negative Kontostände − Restschulden |
+
+## Abweichungen vom ursprünglichen Konzept
+
+- **Benutzerkonten von Anfang an** (eigentlich Stufe 5): Für Handy, Hosting und Verkauf nötig und
+  später nur mühsam nachzurüsten.
+- **Kontostand wird berechnet** statt fest gespeichert: Beim Bearbeiten trägst du den aktuellen Stand
+  ein, spätere Buchungen verändern ihn automatisch. So kann er nie „auseinanderlaufen“.
+- **Kredite ohne eigenes Kreditkonto**: Die Restschuld kommt direkt aus der Kreditberechnung,
+  `loan.account_id` ist entfallen. Neu: optionaler Zinssatz.
+- **Umbuchungen mit Zielkonto**: Girokonto → Sparkonto verschiebt Geld zwischen zwei eigenen Konten.
+- **Diagramme ohne Chart.js**: eigene HTML/CSS-Diagramme. Sie laden nichts von fremden Servern
+  (Datenschutz) und funktionieren ohne Internet.
+- Aus den Ausbaustufen 2–4 schon enthalten: Diagramme, Jahresübersicht, Daueraufträge, Budgets,
+  Kredite mit Zinsen und Prognose.
+
+## Nächste Schritte
+
+- CSV-Import von Kontoauszügen und Import der alten Excel-Tabelle (ab 2016).
+- Datenbank-Migrationen (Alembic), bevor sich Tabellen ändern, in denen schon echte Daten stehen.
+- Vor dem Verkauf: Impressum, Datenschutzerklärung, AGB, Auftragsverarbeitungsvertrag mit dem Hoster,
+  automatische Backups, E-Mail-Bestätigung und „Passwort vergessen“, Bezahlmodell.
+
+## Sicherheit und Datenschutz
+
+- Passwörter nur als Hash (scrypt), Login-Sperre nach vielen Fehlversuchen.
+- Schutz vor gefälschten Formularen (CSRF-Token) und strenge Content-Security-Policy.
+- Jede Datenbankabfrage filtert nach dem angemeldeten Nutzer; Tests prüfen, dass niemand fremde Daten sieht.
+- Seiten mit Finanzdaten werden nie zwischengespeichert, auch nicht offline auf dem Handy.
+- Keine Tracker, keine externen Schriftarten oder Skripte.
+- Echte Daten (`instance/`, `*.db`, Excel- und CSV-Dateien) sind per `.gitignore` vom Repository ausgeschlossen.

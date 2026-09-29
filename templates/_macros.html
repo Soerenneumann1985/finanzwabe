@@ -1,0 +1,161 @@
+{# Reusable pieces for all pages. Import with:
+   {% import "_macros.html" as ui %} #}
+
+{% macro amount(cents, kind=none) -%}
+<span class="amount num{% if cents > 0 and kind != 'transfer' %} pos{% endif %}">{{ cents|money_signed }}</span>
+{%- endmacro %}
+
+{% macro colored(cents) -%}
+<span class="{{ 'pos' if cents > 0 else ('neg' if cents < 0 else '') }}">{{ cents|money_signed }}</span>
+{%- endmacro %}
+
+{% macro hexbadge(category, big=false) -%}
+<span class="hex {{ category.kind }}{{ ' big' if big }}" aria-hidden="true"><span>{{ category.name[:1]|upper }}</span></span>
+{%- endmacro %}
+
+{% macro tx_row(t, next_url="", show_date=false) -%}
+<a class="row" href="{{ url_for('transactions.edit', transaction_id=t.id, next=next_url) if next_url else url_for('transactions.edit', transaction_id=t.id) }}">
+  {{ hexbadge(t.category) }}
+  <div class="main">
+    <div class="title">{{ t.description or t.category.name }}</div>
+    <div class="sub">{{ t.category.name }} · {{ t.account.name }}{% if t.counter_account %} → {{ t.counter_account.name }}{% endif %}</div>
+  </div>
+  <div class="end">
+    {{ amount(t.amount_cents, t.category.kind) }}
+    {% if show_date %}<div class="sub">{{ t.date|date_de }}</div>{% endif %}
+  </div>
+</a>
+{%- endmacro %}
+
+{% macro kpi(label, value, sub="", css="") -%}
+<div class="kpi">
+  <div class="label">{{ label }}</div>
+  <div class="value {{ css }}">{{ value }}</div>
+  {% if sub %}<div class="sub">{{ sub }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro change(value, up_is_good) -%}
+{% if value is none %}–{% else %}
+<span class="{{ ('pos' if (value > 0) == up_is_good else 'neg') if value != 0 else '' }}">{{ value|signed_percent }}</span> ggü. Vorjahr
+{% endif %}
+{%- endmacro %}
+
+{% macro budget_status(row) -%}
+{% if row.state == "over" %}
+<span class="status over">{{ icon("alert") }} Budget überschritten</span>
+{% elif row.state == "warn" %}
+<span class="status warn">{{ icon("alert") }} {{ row.usage }} % vom Budget</span>
+{% elif row.state == "ok" %}
+<span class="status ok">{{ row.usage }} % vom Budget</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro category_bars(rows, year=none, month=none, limit=none, budget_meter=false) -%}
+<div class="bar-list">
+  {% for row in (rows[:limit] if limit else rows) %}
+  {% set href = url_for('overview.month', year=year, month=month, kategorie=row.category.id) if year else none %}
+  <{{ 'a' if href else 'div' }} class="bar-item"{% if href %} href="{{ href }}"{% endif %}>
+    <div class="bar-top">
+      <span class="bar-label">{{ row.category.name }}</span>
+      <span class="bar-value">{{ row.total|money }}{% if budget_meter %} <span class="muted small">von {{ row.category.budget_cents|money }}</span>{% endif %}</span>
+    </div>
+    {% if budget_meter %}
+    <div class="track meter"><div class="fill {{ row.state }}" style="width: {{ row.meter }}%"></div></div>
+    {% else %}
+    <div class="track"><div class="fill" style="width: {{ row.share }}%"></div></div>
+    {% endif %}
+    {% if row.state or row.average is not none %}
+    <div class="bar-note">
+      {% if row.state %}{{ budget_status(row) }}{% if not budget_meter %} <span>Budget {{ row.category.budget_cents|money }}</span>{% endif %}{% endif %}
+      {% if row.average is not none %}<span>Ø {{ row.average|money }} pro Monat</span>{% endif %}
+    </div>
+    {% endif %}
+  </{{ 'a' if href else 'div' }}>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro columns(chart) -%}
+<div class="chart">
+  <div class="legend">
+    <span><i class="swatch s1"></i>Einnahmen</span>
+    <span><i class="swatch s2"></i>Ausgaben</span>
+  </div>
+  <div class="columns">
+    {% for tick in chart.ticks %}
+    <div class="gridline" style="bottom: {{ tick.percent }}%"><span>{{ tick.label }}</span></div>
+    {% endfor %}
+    <div class="col-groups">
+      {% for group in chart.groups %}
+      <a class="col-group" href="{{ url_for('overview.month', year=group.year, month=group.month) }}"
+         data-tip="{{ group.tip }}" aria-label="{{ group.tip|replace('\n', ', ') }}">
+        <span class="col s1" style="height: {{ group.income_pct }}%"></span>
+        <span class="col s2" style="height: {{ group.expense_pct }}%"></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-labels">
+    {% for group in chart.groups %}<span class="{{ 'current' if group.current }}">{{ group.label }}</span>{% endfor %}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro linechart(chart) -%}
+<div class="chart">
+  <div class="linechart">
+    {% for tick in chart.ticks %}
+    <div class="gridline" style="bottom: {{ tick.percent }}%"><span>{{ tick.label }}</span></div>
+    {% endfor %}
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {% if chart.zero_y is not none %}<line class="zero" x1="0" x2="100" y1="{{ chart.zero_y }}" y2="{{ chart.zero_y }}" vector-effect="non-scaling-stroke"/>{% endif %}
+      <path class="area" d="{{ chart.area_path }}"/>
+      <path class="line" d="{{ chart.line_path }}" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div class="points{{ ' single' if chart.points|length == 1 }}">
+      {% for p in chart.points %}
+      <span class="point{{ ' last' if loop.last }}" tabindex="0" data-tip="{{ p.tip }}" aria-label="{{ p.tip|replace('\n', ': ') }}"><i class="dot" style="top: {{ p.y }}%"></i></span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="line-labels">
+    <span>{{ chart.points[0].label }}</span>
+    {% if chart.points|length > 1 %}<span>{{ chart.points[-1].label }}</span>{% endif %}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro loan_card_body(status, show_name=true) -%}
+{% set loan = status.loan %}
+<div class="bar-top">
+  <span class="bar-label">{{ loan.name if show_name else "Restschuld" }}</span>
+  <span class="bar-value">{{ status.remaining|money }}</span>
+</div>
+<div class="track progress"><div class="fill" style="width: {{ status.paid_percent }}%"></div></div>
+<div class="bar-note">
+  {% if status.is_paid_off %}
+  <span class="status ok">{{ icon("check") }} Abbezahlt</span>
+  {% elif status.payoff_date %}
+  <span>{{ status.paid_percent }} % getilgt · schuldenfrei {{ status.payoff_date|month_year }}</span>
+  {% else %}
+  <span class="status over">{{ icon("alert") }} Rate deckt die Zinsen nicht</span>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro empty(text, link=none, link_text=none) -%}
+<div class="empty">
+  <span class="hex big" aria-hidden="true">{{ icon("hexagon", 18) }}</span>
+  <p>{{ text }}</p>
+  {% if link %}<a class="btn small" href="{{ link }}">{{ icon("plus") }} {{ link_text }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% macro field_error(errors, name) -%}
+{% if errors and errors.get(name) %}<div class="error-text" id="{{ name }}-error">{{ errors[name] }}</div>{% endif %}
+{%- endmacro %}

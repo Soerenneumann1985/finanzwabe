@@ -239,6 +239,11 @@ def test_payoff_plan_already_paid():
     assert calc.payoff_plan(0, 30_000) == calc.PayoffPlan(0, 0)
 
 
+def test_repaid_amount_never_negative():
+    assert calc.repaid_amount(1_000_000, 750_000) == 250_000
+    assert calc.repaid_amount(1_000_000, 1_050_000) == 0  # interest made the debt grow
+
+
 def test_paid_off_percent():
     assert calc.paid_off_percent(1_000_000, 750_000) == 25
     assert calc.paid_off_percent(1_000_000, 0) == 100

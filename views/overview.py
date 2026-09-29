@@ -7,6 +7,7 @@ from itertools import groupby
 from flask import Blueprint, abort, g, redirect, render_template, request, url_for
 
 import calculations as calc
+import charts
 import services
 from models import Category
 from views.common import login_required
@@ -90,8 +91,9 @@ def wealth():
     today = dt.date.today()
     wealth = services.wealth_overview(g.user.id, today)
     services.record_snapshot(g.user.id, today, wealth.worth)
-    wealth.history = services.snapshot_history(g.user.id)
-    return render_template("wealth.html", wealth=wealth)
+    series = [(f"{charts.MONTH_SHORT[s.month.month - 1]} {s.month.year}", s.assets_cents - s.debts_cents)
+              for s in services.snapshot_history(g.user.id)]
+    return render_template("wealth.html", wealth=wealth, history_chart=charts.line_chart(series))
 
 
 @bp.route("/suche")

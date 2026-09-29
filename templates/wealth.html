@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set active = "wealth" %}
+{% block title %}Vermögen{% endblock %}
+
+{% block hero %}
+<div class="eyebrow">Nettovermögen</div>
+<div class="hero-figure num">{{ wealth.worth.net|money }}</div>
+<div class="pill-row">
+  <span class="chip">Guthaben {{ wealth.worth.assets|money }}</span>
+  <span class="chip">Schulden {{ wealth.worth.debts|money }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid">
+  <section class="card" aria-labelledby="hist-title">
+    <div class="card-head"><h2 id="hist-title">Verlauf</h2></div>
+    {% if history_chart and history_chart.points|length >= 2 %}
+    {{ ui.linechart(history_chart) }}
+    {% else %}
+    <div class="card-body notice" style="margin: 0 16px 16px">
+      {{ icon("info") }}
+      <span>Der Verlauf füllt sich automatisch: Jeden Monat merkt sich die App dein Nettovermögen.</span>
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="grid cols-even">
+    <section class="card" aria-labelledby="assets-title">
+      <div class="card-head">
+        <h2 id="assets-title">Konten</h2>
+        <a href="{{ url_for('accounts.new') }}">+ Konto</a>
+      </div>
+      {% if wealth.asset_rows %}
+      <div class="list">
+        {% for row in wealth.asset_rows %}
+        <a class="row" href="{{ url_for('accounts.edit', account_id=row.account.id) }}">
+          <div class="main"><div class="title">{{ row.account.name }}</div><div class="sub">{{ row.account.type_label }}</div></div>
+          <div class="end">{{ ui.colored(row.balance) }}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      {{ ui.empty("Noch keine Konten.", url_for('accounts.new'), "Konto anlegen") }}
+      {% endif %}
+    </section>
+
+    <div class="stack">
+      <section class="card" aria-labelledby="cards-title">
+        <div class="card-head">
+          <h2 id="cards-title">Kreditkarten</h2>
+          <a href="{{ url_for('accounts.new', art='credit_card') }}">+ Karte</a>
+        </div>
+        {% if wealth.card_rows %}
+        <div class="bar-list">
+          {% for row in wealth.card_rows %}
+          <a class="bar-item" href="{{ url_for('accounts.edit', account_id=row.account.id) }}">
+            <div class="bar-top"><span class="bar-label">{{ row.account.name }}</span><span class="bar-value">{{ ui.colored(row.balance) }}</span></div>
+            {% if row.free_limit is not none %}
+            <div class="track"><div class="fill" style="width: {{ row.limit_used_percent }}%"></div></div>
+            <div class="bar-note">Frei: <strong>{{ row.free_limit|money }}</strong> von {{ row.account.credit_limit_cents|money }}</div>
+            {% else %}
+            <div class="bar-note">Kein Kreditrahmen hinterlegt</div>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty"><p>Keine Kreditkarten.</p></div>
+        {% endif %}
+      </section>
+
+      <section class="card" aria-labelledby="loans-title">
+        <div class="card-head">
+          <h2 id="loans-title">Kredite</h2>
+          <a href="{{ url_for('loans.index') }}">Alle</a>
+        </div>
+        {% if wealth.loans %}
+        <div class="bar-list">
+          {% for status in wealth.loans %}
+          <a class="bar-item" href="{{ url_for('loans.edit', loan_id=status.loan.id) }}">{{ ui.loan_card_body(status) }}</a>
+          {% endfor %}
+        </div>
+        {% else %}
+        {{ ui.empty("Keine Kredite.", url_for('loans.new'), "Kredit hinzufügen") }}
+        {% endif %}
+      </section>
+
+      <section class="card" aria-labelledby="sum-title">
+        <div class="card-head"><h2 id="sum-title">Zusammenfassung</h2></div>
+        <table>
+          <tbody>
+            <tr><td>Guthaben</td><td>{{ wealth.worth.assets|money }}</td></tr>
+            <tr><td>Schulden (Konten und Karten)</td><td>{{ wealth.account_debt|money }}</td></tr>
+            <tr><td>Restschuld Kredite</td><td>{{ wealth.loan_debt|money }}</td></tr>
+          </tbody>
+          <tfoot><tr><td>Nettovermögen</td><td>{{ ui.colored(wealth.worth.net) }}</td></tr></tfoot>
+        </table>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

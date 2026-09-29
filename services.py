@@ -73,6 +73,7 @@ def delete_user(user: User) -> None:
     """Deletes the user; the database cascades to all of their rows."""
     db.delete(user)
     db.commit()
+    db.expunge_all()  # the session must forget rows the database deleted by cascade
 
 
 # --- Lookups -------------------------------------------------------------------
@@ -183,6 +184,11 @@ class CategoryRow:
     state: str | None = None       # budget state: ok / warn / over
     average: int | None = None     # monthly average (year report)
 
+    @property
+    def meter(self) -> int:
+        """Budget usage for a meter bar, capped at 100 %."""
+        return min(self.usage or 0, 100)
+
 
 @dataclass
 class MonthReport:
@@ -268,6 +274,7 @@ class YearReport:
     expense_change: int | None
     expense_rows: list[CategoryRow]
     months_elapsed: int
+    average_expenses: int
 
     @property
     def has_previous(self) -> bool:
@@ -298,6 +305,7 @@ def year_report(user_id: int, year: int, today: dt.date) -> YearReport:
         expense_change=calc.percent_change(prev_expenses, expenses),
         expense_rows=rows,
         months_elapsed=elapsed,
+        average_expenses=calc.average_per_month(expenses, elapsed),
     )
 
 
@@ -398,6 +406,15 @@ class LoanStatus:
     def is_paid_off(self) -> bool:
         return self.remaining <= 0
 
+    @property
+    def repaid(self) -> int:
+        return calc.repaid_amount(self.loan.start_amount_cents, self.remaining)
+
+    @property
+    def total_rates(self) -> int | None:
+        """All rates of the loan: paid ones plus the ones still to come."""
+        return None if self.plan is None else self.months_paid + self.plan.months
+
 
 def loan_status(loan: Loan, today: dt.date) -> LoanStatus:
     paid = calc.months_paid(loan.start_date, today)
@@ -454,6 +471,15 @@ class Wealth:
     @property
     def loan_debt(self) -> int:
         return sum(s.remaining for s in self.loans)
+
+    @property
+    def account_debt(self) -> int:
+        """Debts on accounts and credit cards (without loans)."""
+        return self.worth.debts - self.loan_debt
+
+    @property
+    def accounts_total(self) -> int:
+        return sum(r.balance for r in self.accounts)
 
     @property
     def debt_free_date(self) -> dt.date | None:

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+{% include "_head.html" %}
+<title>{% block title %}{% endblock %} · {{ app_name }}</title>
+</head>
+<body>
+{% set nav_items = [
+  ("dashboard", "overview.dashboard", "Übersicht", "home"),
+  ("month", "overview.current_month", "Monat", "calendar"),
+  ("year", "overview.current_year", "Jahr", "chart"),
+  ("wealth", "overview.wealth", "Vermögen", "wallet"),
+  ("loans", "loans.index", "Kredite", "loan"),
+  ("more", "overview.more", "Mehr", "more"),
+] %}
+<header class="band{% if band_short %} short{% endif %}">
+  <div class="appbar">
+    <a class="brand" href="{{ url_for('overview.dashboard') }}">
+      <img src="{{ static_url('icons/logo.svg') }}" alt="" width="34" height="34">
+      <span>{{ app_name }}</span>
+    </a>
+    {% if g.user %}
+    <nav class="topnav" aria-label="Hauptnavigation">
+      {% for key, endpoint, label, _icon in nav_items %}
+      <a href="{{ url_for(endpoint) }}"{% if active == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <a class="icon-link" href="{{ url_for('overview.search') }}" aria-label="Suche" title="Suche">{{ icon("search", 22) }}</a>
+    <a class="icon-link" href="{{ url_for('settings.index') }}" aria-label="Einstellungen" title="Einstellungen">{{ icon("settings", 22) }}</a>
+    <a class="btn on-band small desktop-only" href="{{ url_for('transactions.new') }}">{{ icon("plus") }} Buchung</a>
+    {% endif %}
+  </div>
+  <div class="band-content">
+    {% block hero %}<h1>{{ self.title() }}</h1>{% endblock %}
+  </div>
+</header>
+
+<main class="container" id="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes" role="status">
+    {% for category, message in messages %}
+    <div class="flash {{ category }}">
+      {{ icon("check" if category == "success" else ("alert" if category == "error" else "info")) }}
+      <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+{% if g.user %}
+<nav class="tabbar mobile-only" aria-label="Navigation">
+  <a class="tab" href="{{ url_for('overview.dashboard') }}"{% if active == "dashboard" %} aria-current="page"{% endif %}>{{ icon("home") }}<span>Übersicht</span></a>
+  <a class="tab" href="{{ url_for('overview.current_month') }}"{% if active == "month" %} aria-current="page"{% endif %}>{{ icon("calendar") }}<span>Monat</span></a>
+  <div class="fab-wrap"><a class="fab" href="{{ url_for('transactions.new') }}" aria-label="Neue Buchung">{{ icon("plus") }}</a></div>
+  <a class="tab" href="{{ url_for('overview.wealth') }}"{% if active == "wealth" %} aria-current="page"{% endif %}>{{ icon("wallet") }}<span>Vermögen</span></a>
+  <a class="tab" href="{{ url_for('overview.more') }}"{% if active in ("more", "year", "loans") %} aria-current="page"{% endif %}>{{ icon("more") }}<span>Mehr</span></a>
+</nav>
+{% endif %}
+</body>
+</html>

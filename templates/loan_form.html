@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "loans" %}
+{% block title %}{{ "Kredit bearbeiten" if loan else "Neuer Kredit" }}{% endblock %}
+{% block content %}
+<section class="card">
+  <form class="form" method="post" novalidate>
+    {{ ui.csrf() }}
+    <div class="notice" style="margin-bottom: 16px">
+      {{ icon("info") }}
+      <span>Tipp für laufende Kredite: Trage die <strong>heutige Restschuld</strong> als Kreditbetrag und das Datum der <strong>nächsten Rate</strong> als erste Rate ein.</span>
+    </div>
+    <div class="field{{ ' invalid' if errors.name }}">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" value="{{ values.get('name', '') }}" maxlength="80" placeholder="z. B. Autokredit" required>
+      {{ ui.field_error(errors, "name") }}
+    </div>
+    <div class="form-grid two">
+      <div class="field{{ ' invalid' if errors.start_amount }}">
+        <label for="start_amount">Kreditbetrag</label>
+        <div class="amount-input"><input type="text" id="start_amount" name="start_amount" value="{{ values.get('start_amount', '') }}" inputmode="decimal" autocomplete="off" required></div>
+        {{ ui.field_error(errors, "start_amount") }}
+      </div>
+      <div class="field{{ ' invalid' if errors.monthly_rate }}">
+        <label for="monthly_rate">Monatsrate</label>
+        <div class="amount-input"><input type="text" id="monthly_rate" name="monthly_rate" value="{{ values.get('monthly_rate', '') }}" inputmode="decimal" autocomplete="off" required></div>
+        {{ ui.field_error(errors, "monthly_rate") }}
+      </div>
+      <div class="field{{ ' invalid' if errors.interest_rate }}">
+        <label for="interest_rate">Sollzins pro Jahr in % (optional)</label>
+        <input type="text" id="interest_rate" name="interest_rate" value="{{ values.get('interest_rate', '') }}" inputmode="decimal" autocomplete="off" placeholder="z. B. 4,9">
+        <div class="hint">Leer lassen für die einfache Rechnung ohne Zinsen.</div>
+        {{ ui.field_error(errors, "interest_rate") }}
+      </div>
+      <div class="field{{ ' invalid' if errors.start_date }}">
+        <label for="start_date">Erste Rate am</label>
+        <input type="date" id="start_date" name="start_date" value="{{ values.get('start_date', '') }}" required>
+        {{ ui.field_error(errors, "start_date") }}
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Speichern</button>
+      <a class="btn secondary" href="{{ url_for('loans.index') }}">Abbrechen</a>
+    </div>
+  </form>
+  {% if loan %}
+  <div class="card-foot">
+    <form method="post" action="{{ url_for('loans.delete', loan_id=loan.id) }}" data-confirm="Kredit „{{ loan.name }}“ wirklich löschen?">
+      {{ ui.csrf() }}
+      <button class="btn danger small" type="submit">{{ icon("trash") }} Kredit löschen</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
