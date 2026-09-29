@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Import prüfen{% endblock %}
+{% block content %}
+<form method="post" action="{{ url_for('importer.preview') }}">
+  {{ ui.csrf() }}
+  <div class="stack">
+    {% if error %}<div class="flash error">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+
+    <section class="card">
+      <div class="card-head"><h2>Welche Blätter sollen übernommen werden?</h2></div>
+      <div class="list">
+        {% for sheet in sheets %}
+        <label class="row" style="cursor: pointer">
+          <input type="checkbox" name="sheet" value="{{ sheet.name }}"{% if sheet.name in preselected %} checked{% endif %}
+                 style="width: 22px; height: 22px; accent-color: var(--royal); flex: none">
+          <div class="main">
+            <div class="title">{{ sheet.name }}</div>
+            <div class="sub">{{ sheet.rows|length }} Buchungen · {{ sheet.first_date|date_de }} – {{ sheet.last_date|date_de }}</div>
+          </div>
+          <div class="end small">
+            <div class="pos">{{ sheet.income|money }}</div>
+            <div>{{ sheet.expenses|money }}</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="card-foot muted small">Vorausgewählt ist das aktuelle Jahr. Ältere Jahre kannst du dazunehmen – dann funktioniert auch der Vergleich mit dem Vorjahr.</div>
+    </section>
+
+    <div class="grid cols-even">
+      <section class="card">
+        <div class="form">
+          <div class="field">
+            <label for="account_id">Die Buchungen gehören zum Konto</label>
+            <select id="account_id" name="account_id">
+              {% for a in accounts %}<option value="{{ a.id }}"{% if default_account and a.id == default_account.id %} selected{% endif %}>{{ a.name }}</option>{% endfor %}
+            </select>
+            <div class="hint">Umbuchungen zum Sparkonto oder Depot werden automatisch mit dem passenden Konto verbunden.</div>
+          </div>
+          <label class="check">
+            <input type="checkbox" name="balances" value="1" checked>
+            <span>Kontostände, Kredite und Vermögensverlauf aus der Tabelle übernehmen</span>
+          </label>
+        </div>
+      </section>
+
+      {% if snapshot %}
+      <section class="card">
+        <div class="card-head"><h2>Letzte Kontostände vom {{ snapshot.date|date_de }}</h2></div>
+        <div class="list">
+          {% for b in snapshot.balances %}
+          <div class="row">
+            <div class="main">
+              <div class="title">{{ b.label }}</div>
+              <div class="sub">{{ {"giro": "Girokonto", "savings": "Sparkonto", "depot": "Depot", "cash": "Bargeld", "credit_card": "Kreditkarte", "loan": "Kredit"}[b.kind] }}{% if b.limit_cents is not none %} · Rahmen {{ b.limit_cents|money }}{% endif %}</div>
+            </div>
+            <div class="end">{{ ui.colored(b.cents) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="card-foot muted small">Buchungen nach diesem Datum verändern die Stände automatisch weiter. Prüfe nach dem Import unter „Konten“, ob alles zu deiner Bank passt.</div>
+      </section>
+      {% endif %}
+    </div>
+
+    {% for sheet in sheets %}
+    <section class="card">
+      <details{% if sheet.name in preselected %} open{% endif %}>
+        <summary class="card-head" style="cursor: pointer"><h2>Kategorien in „{{ sheet.name }}“</h2><span class="muted small">{{ sheet.rows|length }} Buchungen</span></summary>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Kategorie</th><th scope="col">Anzahl</th><th scope="col">Summe</th></tr></thead>
+            <tbody>
+              {% for category, kind, count, total in sheet.category_totals() %}
+              <tr><td>{{ category }}{% if kind == "transfer" %} <span class="muted small">(Umbuchung)</span>{% endif %}</td><td>{{ count }}</td><td>{{ total|money }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if sheet.unmatched %}
+        <div class="card-body small">
+          <strong>Ohne passende Regel</strong> (landen unter „Sonstiges“ bzw. „Sonstige Einnahmen“, später änderbar):
+          <span class="muted">{% for text, count in sheet.unmatched %}{{ text }}{% if count > 1 %} ({{ count }}×){% endif %}{{ ", " if not loop.last }}{% endfor %}</span>
+        </div>
+        {% endif %}
+        {% if sheet.fixed_dates %}<div class="card-body small muted" style="padding-top: 0">{{ sheet.fixed_dates }} Datum mit offensichtlich falschem Jahr wurde korrigiert.</div>{% endif %}
+      </details>
+    </section>
+    {% endfor %}
+
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Jetzt importieren</button>
+    </div>
+  </div>
+</form>
+<form method="post" action="{{ url_for('importer.cancel') }}" style="margin-top: 10px">
+  {{ ui.csrf() }}
+  <button class="btn secondary" type="submit">Abbrechen</button>
+</form>
+{% endblock %}

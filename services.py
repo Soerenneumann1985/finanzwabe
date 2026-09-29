@@ -349,6 +349,19 @@ def set_account_balance(account: Account, target_cents: int) -> None:
     account.base_balance_cents = calc.base_for_balance(target_cents, own, counter)
 
 
+def set_account_balance_at(account: Account, target_cents: int, day: dt.date) -> None:
+    """Store the base value so that the account showed target_cents at the end of `day`.
+
+    Bookings after that day then move the balance on from there.
+    """
+    def total(column) -> int:
+        return db.scalar(select(func.coalesce(func.sum(Transaction.amount_cents), 0)).where(
+            Transaction.user_id == account.user_id, column == account.id, Transaction.date <= day))
+
+    account.base_balance_cents = calc.base_for_balance(
+        target_cents, total(Transaction.account_id), total(Transaction.counter_account_id))
+
+
 def account_transaction_count(account: Account) -> int:
     stmt = select(func.count(Transaction.id)).where(
         Transaction.user_id == account.user_id,

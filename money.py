@@ -6,6 +6,7 @@ This module is the only place that turns "1.234,56" into 123456 and back.
 from __future__ import annotations
 
 import re
+from decimal import ROUND_HALF_UP, Decimal
 
 NBSP = " "
 MINUS = "−"
@@ -61,6 +62,15 @@ def parse_amount(text: str) -> int:
     if cents > MAX_CENTS:
         raise ValueError("Der Betrag ist zu groß.")
     return -cents if negative else cents
+
+
+def cents_from_number(value: int | float) -> int:
+    """A number from a spreadsheet cell (euros) as cents: -14.33 -> -1433.
+
+    Goes through the decimal text so float noise like 3990.489999999 rounds correctly.
+    """
+    euros = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return int(euros * 100)
 
 
 def parse_percent(text: str) -> int:

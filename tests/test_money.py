@@ -1,7 +1,8 @@
 import pytest
 
 from money import (
-    format_cents, format_cents_short, format_input, format_percent_bp, parse_amount, parse_percent,
+    cents_from_number, format_cents, format_cents_short, format_input, format_percent_bp, parse_amount,
+    parse_percent,
 )
 
 
@@ -56,6 +57,13 @@ def test_format_input_roundtrip():
     for cents in (0, 5, 123456, -1250):
         assert parse_amount(format_input(cents)) == cents
     assert format_input(None) == ""
+
+
+def test_cents_from_number():
+    assert cents_from_number(-14.33) == -1433
+    assert cents_from_number(3990.489999999999) == 399049  # float noise from Excel
+    assert cents_from_number(2500) == 250000
+    assert cents_from_number(0.005) == 1
 
 
 def test_format_percent_bp():

@@ -54,6 +54,10 @@
         <span class="hex"><span>3</span></span>
         <div class="main"><div class="title">Kredite hinzufügen</div><div class="sub">Restschuld und „schuldenfrei am …“ automatisch</div></div>
         {{ icon("right") }}</a></li>
+      <li><a class="row" href="{{ url_for('importer.upload') }}">
+        <span class="hex">{{ icon("upload", 18) }}</span>
+        <div class="main"><div class="title">Oder: Excel-Tabelle importieren</div><div class="sub">Bisherige Umsätze, Kontostände und Kredite übernehmen</div></div>
+        {{ icon("right") }}</a></li>
     </ul>
   </section>
   {% endif %}

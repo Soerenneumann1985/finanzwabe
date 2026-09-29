@@ -21,6 +21,7 @@ ICONS = {
     "left": '<path d="m15 18-6-6 6-6"/>',
     "right": '<path d="m9 18 6-6-6-6"/>',
     "download": '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+    "upload": '<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
     "trash": '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
     "edit": '<path d="M4 20h4L20 8l-4-4L4 16z"/>',
     "check": '<path d="m5 12 5 5 9-10"/>',

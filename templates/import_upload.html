@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Excel-Import{% endblock %}
+{% block content %}
+<div class="grid cols-even">
+  <section class="card">
+    <form class="form" method="post" enctype="multipart/form-data">
+      {{ ui.csrf() }}
+      <h2 style="margin-bottom: 8px">Umsätze aus Excel übernehmen</h2>
+      <p class="muted">Wähle deine Excel-Tabelle. Du siehst danach eine Vorschau und entscheidest, welche Jahre übernommen werden. Erst dann wird gespeichert.</p>
+      {% if error %}<div class="flash error" style="margin-bottom: 14px">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+      <div class="field">
+        <label for="file">Excel-Datei (.xlsx)</label>
+        <input type="file" id="file" name="file" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+      </div>
+      <button class="btn" type="submit">{{ icon("upload") }} Datei prüfen</button>
+    </form>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>So muss die Tabelle aussehen</h2></div>
+    <div class="card-body" style="padding-top: 0">
+      <ul class="muted" style="margin: 0; padding-left: 18px">
+        <li>Eine Buchung pro Zeile: <strong>Datum</strong>, <strong>Betrag</strong> (Ausgaben mit Minus), <strong>Beschreibung</strong>.</li>
+        <li>Gerne ein Blatt pro Jahr, z. B. „2025“ und „2026“.</li>
+        <li>Zeilen wie „Girokonto 500“ oder „Autokredit -3000“ erkennt die App als Kontostände und Kredite.</li>
+        <li>Die Kategorie wählt die App anhand der Beschreibung (z. B. „Tankstelle“, „Miete“, „Umbuchung zum Sparkonto“).</li>
+        <li>Schon vorhandene Buchungen werden übersprungen – du kannst also jederzeit erneut importieren.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

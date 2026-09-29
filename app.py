@@ -56,8 +56,11 @@ def create_app(test_config: dict | None = None) -> Flask:
     models.init_db(app.config["DATABASE_URL"])
     app.teardown_appcontext(lambda _exc: models.db.remove())
 
-    from views import accounts, auth, categories, loans, overview, pwa, recurring, settings, transactions
-    for module in (auth, overview, transactions, recurring, accounts, categories, loans, settings, pwa):
+    from views import (
+        accounts, auth, categories, importer, loans, overview, pwa, recurring, settings, transactions,
+    )
+    for module in (auth, overview, transactions, recurring, accounts, categories, loans, settings,
+                   importer, pwa):
         app.register_blueprint(module.bp)
 
     _register_security(app)

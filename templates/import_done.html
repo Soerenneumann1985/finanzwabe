@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Import abgeschlossen{% endblock %}
+{% block content %}
+<div class="stack">
+  <section class="card">
+    <div class="kpis">
+      {{ ui.kpi("Importiert", result.inserted ~ " Buchungen") }}
+      {{ ui.kpi("Übersprungen", result.duplicates ~ " schon vorhanden") }}
+      {{ ui.kpi("Neue Kredite", result.loans_created|length) }}
+      {{ ui.kpi("Vermögensverlauf", result.snapshots ~ " Monate") }}
+    </div>
+  </section>
+
+  {% if result.balances_set %}
+  <section class="card">
+    <div class="card-head"><h2>Übernommene Kontostände</h2><a href="{{ url_for('accounts.index') }}">Konten prüfen</a></div>
+    <div class="list">
+      {% for name, cents, day in result.balances_set %}
+      <div class="row"><div class="main"><div class="title">{{ name }}</div><div class="sub">Stand am {{ day|date_de }}, spätere Buchungen werden verrechnet</div></div><div class="end">{{ ui.colored(cents) }}</div></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <div class="card-body">
+      {% if result.categories_created %}<p><strong>Neue Kategorien:</strong> {{ result.categories_created|join(", ") }}</p>{% endif %}
+      {% if result.accounts_created %}<p><strong>Neue Konten:</strong> {{ result.accounts_created|join(", ") }}</p>{% endif %}
+      {% if result.loans_created %}<p><strong>Neue Kredite:</strong> {{ result.loans_created|join(", ") }} – ohne Zinsen berechnet, den Zinssatz kannst du unter „Kredite“ ergänzen.</p>{% endif %}
+      {% if result.loans_skipped %}<p class="muted"><strong>Nicht angelegt:</strong> {{ result.loans_skipped|join(", ") }}</p>{% endif %}
+      <div class="actions">
+        <a class="btn" href="{{ url_for('overview.dashboard') }}">Zur Übersicht</a>
+        <a class="btn secondary" href="{{ url_for('overview.current_year') }}">Jahresübersicht</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
