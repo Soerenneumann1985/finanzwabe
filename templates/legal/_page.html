@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% set band_short = true %}
+{% block content %}
+<article class="card legal">
+  <div class="card-body">
+    {% if draft %}
+    <div class="notice warn" style="margin-bottom: 18px">
+      {{ icon("alert") }}
+      <span><strong>Entwurf:</strong> Betreiberangaben fehlen noch (FINANZ_OPERATOR_NAME, FINANZ_OPERATOR_ADDRESS, FINANZ_CONTACT_EMAIL). Vor der Veröffentlichung ausfüllen und rechtlich prüfen lassen.</span>
+    </div>
+    {% endif %}
+    {% block legal %}{% endblock %}
+  </div>
+</article>
+{% include "_legal_links.html" %}
+{% endblock %}

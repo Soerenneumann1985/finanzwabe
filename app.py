@@ -18,7 +18,8 @@ from icons import icon
 from money import format_cents, format_cents_short, format_input, format_percent_bp
 
 BASE_DIR = Path(__file__).resolve().parent
-APP_NAME = "Finanz-App"
+APP_NAME = "Finanzwabe"
+APP_SLOGAN = "Wabe für Wabe schuldenfrei."
 
 MONTH_NAMES = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
                "August", "September", "Oktober", "November", "Dezember"]
@@ -28,10 +29,24 @@ WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__, instance_path=str(BASE_DIR / "instance"))
+    env = os.environ.get
     app.config.from_mapping(
-        DATABASE_URL=os.environ.get("FINANZ_DATABASE_URL"),
-        SECRET_KEY=os.environ.get("FINANZ_SECRET_KEY"),
-        ALLOW_REGISTRATION=os.environ.get("FINANZ_ALLOW_REGISTRATION", "1") == "1",
+        DATABASE_URL=env("FINANZ_DATABASE_URL"),
+        SECRET_KEY=env("FINANZ_SECRET_KEY"),
+        ALLOW_REGISTRATION=env("FINANZ_ALLOW_REGISTRATION", "1") == "1",
+        INVITE_CODE=env("FINANZ_INVITE_CODE", ""),         # beta: registration only with this code
+        BETA=env("FINANZ_BETA", "1") == "1",
+        PUBLIC_URL=env("FINANZ_PUBLIC_URL", ""),           # e.g. https://app.finanzwabe.de (for e-mails)
+        # Operator details for Impressum and Datenschutz
+        OPERATOR_NAME=env("FINANZ_OPERATOR_NAME", "[Vor- und Nachname]"),
+        OPERATOR_ADDRESS=env("FINANZ_OPERATOR_ADDRESS", "[Straße Hausnummer, PLZ Ort]"),
+        CONTACT_EMAIL=env("FINANZ_CONTACT_EMAIL", ""),
+        # E-mail for "Passwort vergessen" (any SMTP account, e.g. of your mail provider)
+        SMTP_HOST=env("FINANZ_SMTP_HOST", ""),
+        SMTP_PORT=int(env("FINANZ_SMTP_PORT", "587")),
+        SMTP_USER=env("FINANZ_SMTP_USER", ""),
+        SMTP_PASSWORD=env("FINANZ_SMTP_PASSWORD", ""),
+        MAIL_FROM=env("FINANZ_MAIL_FROM", ""),
         CSRF_ENABLED=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -57,10 +72,10 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.teardown_appcontext(lambda _exc: models.db.remove())
 
     from views import (
-        accounts, auth, categories, importer, loans, overview, pwa, recurring, settings, transactions,
+        accounts, auth, categories, importer, legal, loans, overview, pwa, recurring, settings, transactions,
     )
     for module in (auth, overview, transactions, recurring, accounts, categories, loans, settings,
-                   importer, pwa):
+                   importer, legal, pwa):
         app.register_blueprint(module.bp)
 
     _register_security(app)
@@ -135,6 +150,8 @@ def _register_template_helpers(app: Flask) -> None:
         column_chart=charts.column_chart,
         line_chart=charts.line_chart,
         app_name=APP_NAME,
+        app_slogan=APP_SLOGAN,
+        config=app.config,
         month_names=MONTH_NAMES,
         month_short=MONTH_SHORT,
     )

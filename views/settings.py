@@ -40,7 +40,7 @@ def change_password():
 @login_required
 def export_csv():
     content = "﻿" + services.transactions_csv(g.user.id)  # BOM: Excel detects UTF-8
-    filename = f"finanz-app-buchungen-{dt.date.today().isoformat()}.csv"
+    filename = f"finanzwabe-buchungen-{dt.date.today().isoformat()}.csv"
     return Response(content, mimetype="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"',
                              "Cache-Control": "no-store"})

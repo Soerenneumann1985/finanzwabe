@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Finanz-App",
-  "short_name": "Finanzen",
-  "description": "Einnahmen, Ausgaben, Vermögen und Kredite auf einen Blick.",
+  "name": "Finanzwabe",
+  "short_name": "Finanzwabe",
+  "description": "Wabe für Wabe schuldenfrei: Einnahmen, Ausgaben, Vermögen und Kredite auf einen Blick.",
   "lang": "de",
   "dir": "ltr",
   "start_url": "/?quelle=app",

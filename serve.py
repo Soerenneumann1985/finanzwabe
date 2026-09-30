@@ -1,4 +1,4 @@
-"""Start the Finanz-App for daily use on this PC and on your smartphone.
+"""Start Finanzwabe for daily use on this PC and on your smartphone.
 
     .venv\\Scripts\\python serve.py           # your real data (instance/finanz.db)
     .venv\\Scripts\\python serve.py --demo    # demo data for trying things out
@@ -37,14 +37,14 @@ def port_in_use(port: int) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Finanz-App starten")
+    parser = argparse.ArgumentParser(description="Finanzwabe starten")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     parser.add_argument("--demo", action="store_true", help="mit Beispieldaten statt echten Daten starten")
     parser.add_argument("--local-only", action="store_true", help="nur auf diesem PC erreichbar (nicht im WLAN)")
     args = parser.parse_args()
 
     if port_in_use(args.port):
-        print(f"\n  Port {args.port} ist schon belegt – läuft die Finanz-App bereits in einem anderen Fenster?")
+        print(f"\n  Port {args.port} ist schon belegt – läuft Finanzwabe bereits in einem anderen Fenster?")
         print("  Bitte das andere Fenster schließen (Strg+C) oder mit --port 8001 starten.\n")
         raise SystemExit(1)
 
@@ -63,7 +63,7 @@ def main() -> None:
 
     host = "127.0.0.1" if args.local_only else "0.0.0.0"
     print()
-    print("  Finanz-App läuft" + (" mit DEMO-Daten" if args.demo else ""))
+    print("  Finanzwabe läuft" + (" mit DEMO-Daten" if args.demo else ""))
     print(f"  Auf diesem PC:      http://localhost:{args.port}")
     if not args.local_only:
         print(f"  Smartphone (WLAN):  http://{local_network_ip()}:{args.port}")

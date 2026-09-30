@@ -18,6 +18,7 @@
     <a class="brand" href="{{ url_for('overview.dashboard') }}">
       <img src="{{ static_url('icons/logo.svg') }}" alt="" width="34" height="34">
       <span>{{ app_name }}</span>
+      {% if config.BETA %}<span class="beta-badge">Beta</span>{% endif %}
     </a>
     {% if g.user %}
     <nav class="topnav" aria-label="Hauptnavigation">

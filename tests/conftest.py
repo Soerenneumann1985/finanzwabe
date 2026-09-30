@@ -21,9 +21,9 @@ def client(app):
     return app.test_client()
 
 
-def register(client, email="anna@example.com", password="geheim123"):
-    return client.post("/registrieren", data={"email": email, "password": password, "password2": password},
-                       follow_redirects=True)
+def register(client, email="anna@example.com", password="geheim123", **extra):
+    data = {"email": email, "password": password, "password2": password, "terms": "1"} | extra
+    return client.post("/registrieren", data=data, follow_redirects=True)
 
 
 def login(client, email="anna@example.com", password="geheim123"):

@@ -1,4 +1,4 @@
-// Finanz-App: small enhancements. Every page also works without JavaScript.
+// Finanzwabe: small enhancements. Every page also works without JavaScript.
 "use strict";
 
 // --- Offline support and installation (PWA) ------------------------------------

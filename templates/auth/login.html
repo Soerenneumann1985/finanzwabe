@@ -12,10 +12,11 @@
   <div class="field">
     <label for="password">Passwort</label>
     <input type="password" id="password" name="password" autocomplete="current-password" required>
+    <div class="hint"><a href="{{ url_for('auth.forgot_password') }}">Passwort vergessen?</a></div>
   </div>
   <button class="btn block" type="submit">Anmelden</button>
 </form>
 {% endblock %}
 {% block foot %}
-{% if allow_registration %}Noch kein Konto? <a href="{{ url_for('auth.register') }}">Jetzt registrieren</a>{% endif %}
+{% if allow_registration %}Noch kein Konto? <a href="{{ url_for('auth.register') }}">Jetzt kostenlos registrieren</a>{% endif %}
 {% endblock %}

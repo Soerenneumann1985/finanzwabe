@@ -10,7 +10,7 @@ import datetime as dt
 
 from sqlalchemy import (
     Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint,
-    create_engine, event,
+    create_engine, event, inspect, text,
 )
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import (
@@ -50,6 +50,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow)
+    accepted_terms_at: Mapped[dt.datetime | None] = mapped_column(DateTime)  # AGB accepted at registration
 
 
 class Account(Base):
@@ -162,14 +163,40 @@ class NetWorthSnapshot(Base):
 
 
 def init_db(url: str) -> Engine:
-    """Connect to the database and create missing tables."""
+    """Connect to the database, create missing tables and add missing columns."""
     engine = create_engine(url)
     if engine.dialect.name == "sqlite":
         event.listen(engine, "connect", _enable_sqlite_foreign_keys)
     db.remove()
     db.configure(bind=engine)
     Base.metadata.create_all(engine)
+    add_missing_columns(engine)
     return engine
+
+
+def add_missing_columns(engine: Engine) -> list[str]:
+    """Small automatic migration: new optional columns are added to existing tables.
+
+    create_all() only creates missing tables. A database that already holds real
+    data would otherwise lack columns added to the models later. Only additive,
+    optional (nullable) columns are handled; anything else needs a real migration.
+    """
+    inspector = inspect(engine)
+    added = []
+    with engine.begin() as connection:
+        for table in Base.metadata.sorted_tables:
+            if not inspector.has_table(table.name):
+                continue
+            existing = {column["name"] for column in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                if not column.nullable:
+                    raise RuntimeError(f"Spalte {table.name}.{column.name} braucht eine echte Migration.")
+                column_type = column.type.compile(engine.dialect)
+                connection.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {column_type}'))
+                added.append(f"{table.name}.{column.name}")
+    return added
 
 
 def _enable_sqlite_foreign_keys(dbapi_connection, _record) -> None:

@@ -1,0 +1,21 @@
+{% extends "auth/layout.html" %}
+{% import "_macros.html" as ui %}
+{% block title %}Neues Passwort{% endblock %}
+{% block content %}
+<form class="form" method="post" novalidate>
+  {{ ui.csrf() }}
+  <h2 style="margin-bottom: 12px">Neues Passwort festlegen</h2>
+  <div class="field{{ ' invalid' if errors.password }}">
+    <label for="password">Neues Passwort</label>
+    <input type="password" id="password" name="password" autocomplete="new-password" minlength="{{ min_length }}" required autofocus>
+    <div class="hint">Mindestens {{ min_length }} Zeichen.</div>
+    {{ ui.field_error(errors, "password") }}
+  </div>
+  <div class="field{{ ' invalid' if errors.password2 }}">
+    <label for="password2">Neues Passwort wiederholen</label>
+    <input type="password" id="password2" name="password2" autocomplete="new-password" required>
+    {{ ui.field_error(errors, "password2") }}
+  </div>
+  <button class="btn block" type="submit">Passwort speichern</button>
+</form>
+{% endblock %}

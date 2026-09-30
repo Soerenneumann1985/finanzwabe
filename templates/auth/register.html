@@ -4,9 +4,23 @@
 {% block content %}
 <form class="form" method="post" action="{{ url_for('auth.register') }}" novalidate>
   {{ ui.csrf() }}
+  {% if config.BETA %}
+  <div class="notice small" style="margin-bottom: 16px">
+    {{ icon("info") }}
+    <span><strong>Kostenlose Testphase:</strong> Während der Beta ist Finanzwabe gratis. Ein Bezahl-Tarif kommt später und gilt nur, wenn du ihn ausdrücklich buchst.</span>
+  </div>
+  {% endif %}
+  {% if needs_invite %}
+  <div class="field{{ ' invalid' if errors.invite }}">
+    <label for="invite">Einladungscode</label>
+    <input type="text" id="invite" name="invite" value="{{ request.form.get('invite', '') }}" autocomplete="off" autocapitalize="characters" required>
+    <div class="hint">Den Code bekommst du als Beta-Tester von uns.</div>
+    {{ ui.field_error(errors, "invite") }}
+  </div>
+  {% endif %}
   <div class="field{{ ' invalid' if errors.email }}">
     <label for="email">E-Mail</label>
-    <input type="email" id="email" name="email" value="{{ email }}" autocomplete="username" required autofocus>
+    <input type="email" id="email" name="email" value="{{ email }}" autocomplete="username" required{% if not needs_invite %} autofocus{% endif %}>
     {{ ui.field_error(errors, "email") }}
   </div>
   <div class="field{{ ' invalid' if errors.password }}">
@@ -20,9 +34,16 @@
     <input type="password" id="password2" name="password2" autocomplete="new-password" required>
     {{ ui.field_error(errors, "password2") }}
   </div>
+  <div class="field{{ ' invalid' if errors.terms }}">
+    <label class="check">
+      <input type="checkbox" name="terms" value="1"{% if request.form.get('terms') %} checked{% endif %} required>
+      <span>Ich stimme den <a href="{{ url_for('legal.terms') }}" target="_blank">AGB</a> zu. Die <a href="{{ url_for('legal.privacy') }}" target="_blank">Datenschutzerklärung</a> habe ich zur Kenntnis genommen.</span>
+    </label>
+    {{ ui.field_error(errors, "terms") }}
+  </div>
   <div class="notice small">
     {{ icon("info") }}
-    <span>Deine Daten gehören dir: kein Tracking, keine Werbung. Du kannst jederzeit alles exportieren oder dein Konto löschen.</span>
+    <span>Deine Daten gehören dir: keine Bank-Zugangsdaten nötig, kein Tracking, keine Werbung. Export und Löschen jederzeit mit einem Klick.</span>
   </div>
   <div class="actions"><button class="btn block" type="submit">Konto erstellen</button></div>
 </form>

@@ -1,7 +1,8 @@
-# Finanz-App – Regeln für Claude
+# Finanzwabe – Regeln für Claude
 
 ## Projekt
-Persönliche Finanz-App (Flask, SQLAlchemy, SQLite, pytest).
+Finanzwabe – Finanz-App mit Slogan „Wabe für Wabe schuldenfrei.“
+(Flask, SQLAlchemy, SQLite, pytest). Projektordner heißt weiter finanz-app.
 Das vollständige Konzept steht in KONZEPT.md.
 
 ## Arbeitsweise

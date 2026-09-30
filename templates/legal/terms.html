@@ -1,0 +1,36 @@
+{% extends "legal/_page.html" %}
+{% block title %}AGB{% endblock %}
+{% block legal %}
+<h2>Allgemeine Geschäftsbedingungen</h2>
+<p class="muted small">Stand: {{ today|date_de }}</p>
+
+<h3>1. Geltungsbereich</h3>
+<p>Diese AGB gelten für die Nutzung der Web-App {{ app_name }} (im Folgenden „App“), angeboten von {{ config.OPERATOR_NAME }}, {{ config.OPERATOR_ADDRESS }} (im Folgenden „Anbieter“).</p>
+
+<h3>2. Leistung</h3>
+<p>Die App hilft dabei, persönliche Einnahmen, Ausgaben, Kontostände, Budgets und Kredite zu erfassen und auszuwerten. Alle Berechnungen – insbesondere Restschulden und das voraussichtliche Datum der Schuldenfreiheit – sind Schätzungen auf Grundlage deiner Eingaben. Maßgeblich sind immer die Unterlagen deiner Bank. Die App ist <strong>keine</strong> Anlage-, Kredit-, Steuer- oder Rechtsberatung.</p>
+
+<h3>3. Registrierung</h3>
+<p>Für die Nutzung ist ein Benutzerkonto nötig. Du musst volljährig sein und eine eigene, gültige E-Mail-Adresse angeben. Halte dein Passwort geheim. Ein Anspruch auf Registrierung besteht nicht; in der Testphase kann sie von einem Einladungscode abhängen.</p>
+
+<h3>4. Testphase (Beta) und Preise</h3>
+<p>Während der Testphase ist die Nutzung kostenlos. In dieser Phase können sich Funktionen ändern, und es kann zu Unterbrechungen kommen. Nach der Testphase kann der Anbieter kostenpflichtige Tarife einführen. Ein kostenpflichtiger Vertrag entsteht nur, wenn du einen Tarif ausdrücklich buchst; eine automatische Umstellung gibt es nicht. Über die Einführung von Preisen wirst du vorab per E-Mail informiert.</p>
+
+<h3>5. Deine Pflichten</h3>
+<p>Du nutzt die App nur für eigene, rechtmäßige Zwecke und greifst nicht auf fremde Konten oder die technische Infrastruktur zu. Für die Richtigkeit deiner Eingaben bist du selbst verantwortlich. Wir empfehlen, regelmäßig den CSV-Export als eigene Sicherung zu nutzen.</p>
+
+<h3>6. Verfügbarkeit und Änderungen</h3>
+<p>Der Anbieter bemüht sich um einen störungsfreien Betrieb, schuldet aber keine ununterbrochene Verfügbarkeit, insbesondere nicht bei Wartung, Sicherheitsupdates oder Störungen außerhalb seines Einflusses.</p>
+
+<h3>7. Haftung</h3>
+<p>Der Anbieter haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit sowie bei Verletzung von Leben, Körper oder Gesundheit. Bei leichter Fahrlässigkeit haftet er nur bei Verletzung wesentlicher Vertragspflichten und begrenzt auf den typischerweise vorhersehbaren Schaden. Während der kostenlosen Testphase ist die Haftung für leichte Fahrlässigkeit ausgeschlossen, soweit gesetzlich zulässig. Für finanzielle Entscheidungen, die du auf Grundlage der App triffst, übernimmt der Anbieter keine Haftung.</p>
+
+<h3>8. Laufzeit und Kündigung</h3>
+<p>Du kannst die Nutzung jederzeit beenden, indem du dein Konto unter „Einstellungen → Konto löschen“ löschst. Dabei werden alle deine Daten gelöscht. Der Anbieter kann die kostenlose Nutzung mit einer Frist von vier Wochen per E-Mail beenden; das Recht zur Kündigung aus wichtigem Grund bleibt unberührt.</p>
+
+<h3>9. Änderungen dieser AGB</h3>
+<p>Änderungen werden dir mindestens vier Wochen vorher per E-Mail mitgeteilt. Widersprichst du nicht innerhalb dieser Frist, gelten sie als angenommen; auf diese Folge wird in der Mitteilung hingewiesen. Bei Widerspruch kann jede Seite den Vertrag kündigen.</p>
+
+<h3>10. Schlussbestimmungen</h3>
+<p>Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Bei Verbrauchern gilt diese Rechtswahl nur, soweit dadurch nicht der Schutz zwingender Vorschriften des Staates entzogen wird, in dem sie ihren gewöhnlichen Aufenthalt haben. Sollte eine Bestimmung unwirksam sein, bleibt der Rest wirksam.</p>
+{% endblock %}

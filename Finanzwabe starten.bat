@@ -1,5 +1,5 @@
 @echo off
-rem Startet die Finanz-App. Beim ersten Mal wird alles Noetige installiert.
+rem Startet Finanzwabe. Beim ersten Mal wird alles Noetige installiert.
 cd /d "%~dp0"
 if not exist ".venv\Scripts\python.exe" (
   echo Erster Start: Python-Umgebung wird eingerichtet ...

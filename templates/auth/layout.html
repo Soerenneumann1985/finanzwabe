@@ -10,7 +10,8 @@
     <div class="auth-card">
       <div class="auth-logo">
         <img src="{{ static_url('icons/logo.svg') }}" alt="" width="76" height="76">
-        <h1>{{ app_name }}</h1>
+        <h1>{{ app_name }}{% if config.BETA %} <span class="beta-badge">Beta</span>{% endif %}</h1>
+        <p class="slogan">{{ app_slogan }}</p>
         <p>Einnahmen, Ausgaben, Vermögen und Kredite auf einen Blick.</p>
       </div>
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -26,6 +27,7 @@
         {% block content %}{% endblock %}
       </div>
       <div class="auth-foot">{% block foot %}{% endblock %}</div>
+      {% include "_legal_links.html" %}
     </div>
   </main>
 </div>

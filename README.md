@@ -1,7 +1,7 @@
-# Finanz-App
+# Finanzwabe
 
-Persönliche Finanz-App im Königsblau-Design mit 3D-Wabenstruktur. Sie ersetzt eine selbst gebaute
-Excel-Tabelle und beantwortet drei Fragen auf einen Blick:
+**Wabe für Wabe schuldenfrei.** Finanz-App im Königsblau-Design mit 3D-Wabenstruktur. Sie ersetzt eine
+selbst gebaute Excel-Tabelle und beantwortet drei Fragen auf einen Blick:
 
 1. **Wofür gebe ich mein Geld aus?** Einnahmen und Ausgaben pro Monat, nach Kategorien, mit Budgets.
 2. **Wie stehe ich insgesamt da?** Guthaben minus Schulden = Nettovermögen, mit Verlauf.
@@ -22,11 +22,13 @@ Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installi
 | Daueraufträge | Miete, Gehalt, Abos, Kreditraten buchen sich jeden Monat selbst |
 | Kategorien | Fixkosten-Haken (zählt trotzdem nur einmal) und Monatsbudget mit Warnung ab 80 % |
 | Suche & Export | Suche nach Text, Kategorie oder Betrag; CSV-Export, der direkt in Excel aufgeht |
-| Konto | Mehrere Nutzer mit Login, Passwort ändern, alle Daten löschen |
+| Konto | Mehrere Nutzer mit Login, Passwort ändern und vergessen (E-Mail), alle Daten löschen |
+| Excel-Import | Alte Tabelle mit Vorschau übernehmen: Buchungen, Kontostände, Kredite, Vermögensverlauf |
+| Start & Betrieb | Beta-Einladungscode, AGB-Zustimmung, Impressum/Datenschutz/AGB, Backups, Admin-Werkzeug |
 
 ## Schnellstart (Windows)
 
-Doppelklick auf **`Finanz-App starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
+Doppelklick auf **`Finanzwabe starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
 selbst ein. Danach öffnet sich der Browser mit `http://localhost:8000`. Registriere dich und leg los.
 
 Oder im Terminal im Projektordner:
@@ -49,7 +51,7 @@ Die Demo-Anmeldung steht im Startfenster (und in `seed.py`). Deine echten Daten 
 
 ### Variante A: Zuhause im WLAN (sofort, kostenlos)
 
-1. Am PC `Finanz-App starten.bat` ausführen. Das Fenster zeigt die Adresse fürs Handy,
+1. Am PC `Finanzwabe starten.bat` ausführen. Das Fenster zeigt die Adresse fürs Handy,
    z. B. `http://192.168.178.23:8000`.
 2. Beim ersten Start fragt die Windows-Firewall nach: **„Private Netzwerke“ erlauben**.
 3. Am Handy (gleiches WLAN) die Adresse in Chrome öffnen und anmelden.
@@ -59,6 +61,8 @@ Einschränkung: Das funktioniert nur, solange der PC läuft und du im selben WLA
 Chrome eine Verknüpfung an statt einer vollwertig installierten App.
 
 ### Variante B: Online mit HTTPS (überall, echte App-Installation)
+
+Ausführliche Schritt-für-Schritt-Anleitung: **[DEPLOY.md](DEPLOY.md)**. Kurzfassung:
 
 Empfohlen: **PythonAnywhere** mit Serverstandort EU (`eu.pythonanywhere.com`). SQLite-Daten bleiben
 dort dauerhaft gespeichert, HTTPS ist inklusive.
@@ -88,6 +92,11 @@ Android-Paket (Trusted Web Activity) für den Play Store. Am Code ändert sich d
 | `FINANZ_ALLOW_REGISTRATION` | `0` = keine neuen Registrierungen | `1` |
 | `FINANZ_HTTPS` | `1` = Cookie nur über HTTPS | aus |
 | `FINANZ_BEHIND_PROXY` | `1` hinter einem Hosting-Proxy | aus |
+| `FINANZ_INVITE_CODE` | Registrierung nur mit diesem Code (Beta) | leer = offen |
+| `FINANZ_BETA` | `0` blendet das Beta-Abzeichen aus | `1` |
+| `FINANZ_PUBLIC_URL` | Adresse der App, für Links in E-Mails | – |
+| `FINANZ_OPERATOR_NAME`, `…_ADDRESS`, `FINANZ_CONTACT_EMAIL` | Angaben für Impressum und Datenschutz | Platzhalter |
+| `FINANZ_SMTP_HOST`, `…_PORT`, `…_USER`, `…_PASSWORD`, `FINANZ_MAIL_FROM` | E-Mail-Versand für „Passwort vergessen“ | aus |
 
 ## Tests
 
@@ -150,6 +159,9 @@ Alle Regeln stehen in `calculations.py`, jede mit eigenem Test. Beträge sind im
   Kredite mit Zinsen und Prognose.
 
 ## Nächste Schritte
+
+Der persönliche Startplan liegt bewusst nicht im Repository.
+
 
 - CSV-Import von Kontoauszügen und Import der alten Excel-Tabelle (ab 2016).
 - Datenbank-Migrationen (Alembic), bevor sich Tabellen ändern, in denen schon echte Daten stehen.

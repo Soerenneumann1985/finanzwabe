@@ -25,8 +25,18 @@
   </a>
   {% endfor %}
 </div>
+{% if config.CONTACT_EMAIL %}
+<section class="card" style="margin-top: 14px">
+  <a class="row" href="mailto:{{ config.CONTACT_EMAIL }}?subject=Feedback%20zu%20Finanzwabe">
+    <span class="hex">{{ icon("info", 18) }}</span>
+    <div class="main"><div class="title">Feedback geben</div><div class="sub">Fehler gefunden oder eine Idee? Schreib uns – jede Rückmeldung hilft.</div></div>
+    {{ icon("right") }}
+  </a>
+</section>
+{% endif %}
 <form method="post" action="{{ url_for('auth.logout') }}" style="margin-top: 20px">
   {{ ui.csrf() }}
   <button class="btn secondary block" type="submit">{{ icon("logout") }} Abmelden</button>
 </form>
+<div class="more-legal">{% include "_legal_links.html" %}</div>
 {% endblock %}

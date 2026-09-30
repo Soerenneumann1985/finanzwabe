@@ -1,4 +1,4 @@
-/* Finanz-App – Königsblau mit 3D-Wabenstruktur. Mobile first. */
+/* Finanzwabe – Königsblau mit 3D-Wabenstruktur. Mobile first. */
 
 :root {
   color-scheme: light;
@@ -576,7 +576,7 @@ input:focus, select:focus { border-color: var(--royal); box-shadow: 0 0 0 4px co
 .amount-input input { font-size: 1.6rem; font-weight: 700; min-height: 60px; padding-right: 44px; font-variant-numeric: tabular-nums; }
 .amount-input::after { content: "€"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; font-weight: 700; color: var(--text-2); }
 
-.check { display: flex; align-items: flex-start; gap: 10px; font-weight: 550; cursor: pointer; }
+.check, .field > label.check { display: flex; align-items: flex-start; gap: 10px; font-weight: 550; cursor: pointer; }
 .check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--royal); flex: none; }
 
 .segmented {
@@ -771,6 +771,37 @@ input:focus, select:focus { border-color: var(--royal); box-shadow: 0 0 0 4px co
 .auth-foot { text-align: center; margin-top: 16px; font-size: .92rem; }
 body.auth-body { background: var(--band-3); }
 body.auth-body .band { min-height: 100vh; min-height: 100dvh; padding-bottom: 0; }
+
+.slogan { font-weight: 650; font-size: 1.05rem; opacity: 1 !important; letter-spacing: .01em; }
+
+.beta-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--band-3);
+  background: #ffd76a;
+}
+
+.legal-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 18px;
+  font-size: .85rem;
+}
+.legal-links a { opacity: .85; }
+.container .legal-links a, .more-legal .legal-links a { color: var(--text-2); }
+
+.legal h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.legal h3 { font-size: 1rem; margin: 20px 0 6px; }
+.legal p, .legal li { max-width: 72ch; }
+.legal ul { padding-left: 20px; margin: 0 0 .75rem; }
 
 .install-hint { display: none; }
 .install-hint.visible { display: flex; }

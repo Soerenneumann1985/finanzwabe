@@ -53,9 +53,9 @@ TYPE_ORDER = {key: index for index, key in enumerate(ACCOUNT_TYPES)}
 
 # --- Users ---------------------------------------------------------------------
 
-def create_user(email: str, password_hash: str) -> User:
+def create_user(email: str, password_hash: str, accepted_terms_at: dt.datetime | None = None) -> User:
     """New user with the default categories and an empty Girokonto."""
-    user = User(email=email, password_hash=password_hash)
+    user = User(email=email, password_hash=password_hash, accepted_terms_at=accepted_terms_at)
     db.add(user)
     db.flush()
     for name, kind, is_fixed in DEFAULT_CATEGORIES:

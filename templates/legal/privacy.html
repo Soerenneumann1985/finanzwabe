@@ -1,0 +1,41 @@
+{% extends "legal/_page.html" %}
+{% block title %}Datenschutz{% endblock %}
+{% block legal %}
+<h2>Datenschutzerklärung</h2>
+<p class="muted small">Stand: {{ today|date_de }}</p>
+
+<h3>1. Verantwortlicher</h3>
+<p>{{ config.OPERATOR_NAME }}, {{ config.OPERATOR_ADDRESS }}<br>
+E-Mail: {% if config.CONTACT_EMAIL %}<a href="mailto:{{ config.CONTACT_EMAIL }}">{{ config.CONTACT_EMAIL }}</a>{% else %}[E-Mail-Adresse]{% endif %}</p>
+
+<h3>2. Das Wichtigste in Kürze</h3>
+<ul>
+  <li>{{ app_name }} speichert nur, was du selbst eingibst oder importierst, und deine Anmeldedaten.</li>
+  <li>Wir brauchen <strong>keine Zugangsdaten zu deiner Bank</strong> und verbinden uns mit keiner Bank.</li>
+  <li>Kein Tracking, keine Werbung, keine Analyse-Dienste, keine Schriftarten oder Skripte von fremden Servern.</li>
+  <li>Wir verkaufen oder teilen deine Daten nicht.</li>
+  <li>Du kannst alle Buchungen jederzeit exportieren und dein Konto mit allen Daten selbst löschen.</li>
+</ul>
+
+<h3>3. Welche Daten wir verarbeiten und warum</h3>
+<p><strong>Benutzerkonto:</strong> E-Mail-Adresse, Passwort (nur als nicht umkehrbarer Hash gespeichert), Zeitpunkt der Registrierung und der Zustimmung zu den AGB. Zweck: Bereitstellung deines Kontos. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertrag).</p>
+<p><strong>Deine Finanzdaten:</strong> Konten, Kontostände, Buchungen, Kategorien, Budgets, Daueraufträge, Kredite und der daraus berechnete Vermögensverlauf. Zweck: die Funktionen der App (Übersichten, Auswertungen, Prognosen). Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Beim Excel-Import wird die hochgeladene Datei nur ausgewertet; die erkannten Buchungen werden bis zur Bestätigung vorübergehend gespeichert und danach gelöscht.</p>
+<p><strong>Server-Protokolle:</strong> Beim Aufruf der App verarbeitet unser Hosting-Anbieter technisch notwendige Daten (IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, Browser-Kennung), um den Betrieb und die Sicherheit zu gewährleisten. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren Betrieb). Diese Protokolle werden nach spätestens [30] Tagen gelöscht.</p>
+<p><strong>E-Mails:</strong> Wenn du „Passwort vergessen“ nutzt oder uns schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt, um dir zu antworten (Art. 6 Abs. 1 lit. b DSGVO).</p>
+
+<h3>4. Cookies</h3>
+<p>{{ app_name }} setzt nur ein technisch notwendiges Cookie, das dich nach der Anmeldung angemeldet hält und Formulare vor Missbrauch schützt. Es enthält keine Finanzdaten und wird nicht für Tracking verwendet. Eine Einwilligung ist dafür nicht erforderlich (§ 25 Abs. 2 TDDDG).</p>
+
+<h3>5. Hosting und Empfänger</h3>
+<p>Die App und die Datenbank laufen bei [Name und Anschrift des Hosting-Anbieters, Serverstandort in der EU]. Mit dem Anbieter besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO. Für den Versand von E-Mails nutzen wir [E-Mail-Anbieter]. Eine Übermittlung in Länder außerhalb der EU findet [nicht] statt.</p>
+
+<h3>6. Speicherdauer</h3>
+<p>Deine Daten bleiben gespeichert, solange dein Konto besteht. Wenn du dein Konto unter „Einstellungen → Konto löschen“ löschst, werden alle Daten sofort gelöscht. Aus Sicherheitskopien verschwinden sie spätestens nach [14] Tagen.</p>
+
+<h3>7. Deine Rechte</h3>
+<p>Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20 – der CSV-Export steht dir jederzeit zur Verfügung) und Widerspruch (Art. 21). Wende dich dazu einfach per E-Mail an uns.</p>
+<p>Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel bei [der für den Betreiber zuständigen Landesdatenschutzbehörde].</p>
+
+<h3>8. Sicherheit</h3>
+<p>Die Verbindung ist per HTTPS verschlüsselt. Passwörter werden nur als Hash gespeichert, Anmeldeversuche werden begrenzt, und jede Abfrage ist streng auf dein eigenes Konto beschränkt. Seiten mit Finanzdaten werden weder im Browser noch auf dem Gerät zwischengespeichert.</p>
+{% endblock %}

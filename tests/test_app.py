@@ -204,7 +204,8 @@ def test_csrf_protection_rejects_forged_posts(tmp_path):
     assert response.status_code == 400
     page = client.get("/registrieren").text
     response = client.post("/registrieren", data={"email": "x@y.de", "password": "geheim123",
-                                                  "password2": "geheim123", "csrf_token": csrf_from(page)})
+                                                  "password2": "geheim123", "terms": "1",
+                                                  "csrf_token": csrf_from(page)})
     assert response.status_code == 302
 
 

@@ -15,7 +15,7 @@ from pathlib import Path
 
 from werkzeug.security import generate_password_hash
 
-DEMO_EMAIL = "demo@finanz-app.test"
+DEMO_EMAIL = "demo@finanzwabe.test"
 DEMO_PASSWORD = "demo-finanzen"
 DEMO_DATABASE = Path(__file__).resolve().parent / "instance" / "demo.db"
 

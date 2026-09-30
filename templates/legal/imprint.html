@@ -1,0 +1,21 @@
+{% extends "legal/_page.html" %}
+{% block title %}Impressum{% endblock %}
+{% block legal %}
+<h2>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</h2>
+<p>
+  {{ config.OPERATOR_NAME }}<br>
+  {{ config.OPERATOR_ADDRESS }}
+</p>
+
+<h3>Kontakt</h3>
+<p>E-Mail: {% if config.CONTACT_EMAIL %}<a href="mailto:{{ config.CONTACT_EMAIL }}">{{ config.CONTACT_EMAIL }}</a>{% else %}[E-Mail-Adresse]{% endif %}</p>
+
+<h3>Umsatzsteuer</h3>
+<p>Gemäß § 19 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung). <span class="muted">[Anpassen, falls eine Umsatzsteuer-ID vorhanden ist.]</span></p>
+
+<h3>Verbraucherstreitbeilegung</h3>
+<p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+<h3>Hinweis</h3>
+<p>{{ app_name }} ist ein Werkzeug zur Übersicht über die eigenen Finanzen. Es bietet keine Anlage-, Kredit-, Steuer- oder Rechtsberatung.</p>
+{% endblock %}
