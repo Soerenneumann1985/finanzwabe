@@ -84,6 +84,9 @@ class Browser:
     def screenshot(self, url: str, width: int, height: int, mobile: bool) -> bytes:
         self.call("Emulation.setDeviceMetricsOverride", width=width, height=height,
                   deviceScaleFactor=2, mobile=mobile)
+        # Always the light theme, whatever the Windows setting is.
+        self.call("Emulation.setEmulatedMedia",
+                  features=[{"name": "prefers-color-scheme", "value": "light"}])
         self.ws.send(json.dumps({"id": 0, "method": "Page.navigate", "params": {"url": url}}))
         self.wait_for("Page.loadEventFired")
         time.sleep(0.5)

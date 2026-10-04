@@ -78,7 +78,7 @@ def create_demo_user(today: dt.date | None = None) -> None:
         book(d(12), 17.99, "Abos & Mitgliedschaften", "Streaming")
         book(d(15), 289, "Kreditrate", "Rate Autokredit")
         book(d(1), 130, "Kreditrate", "Rate Bafög-Darlehen")
-        book(d(27), 3_150, "Gehalt", "Gehalt")
+        book(d(1), 3_150, "Gehalt", "Gehalt")  # salary early, so every month starts in the plus
         book(d(28), 250, "Sparen", "Sparrate Tagesgeld", counter=savings)
         if rng.random() < 0.5:
             book(d(20), rng.choice([80, 120, 150]), "Nebeneinkünfte", "Kleinanzeigen-Verkauf")
@@ -110,7 +110,7 @@ def create_demo_user(today: dt.date | None = None) -> None:
     next_month = calc.add_months(this_month, 1)
     for text, euros, category, day, counter in (
         ("Miete Wohnung", 950, "Miete", 1, None),
-        ("Gehalt", 3_150, "Gehalt", 27, None),
+        ("Gehalt", 3_150, "Gehalt", 1, None),
         ("Rate Autokredit", 289, "Kreditrate", 15, None),
         ("Sparrate Tagesgeld", 250, "Sparen", 28, savings),
     ):
