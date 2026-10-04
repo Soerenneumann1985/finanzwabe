@@ -27,3 +27,11 @@ instance/
 # Upload-Pakete und Screenshots
 dist/
 screenshots/
+
+# Private Notizen (Startplan usw.) - nie ins Repository
+privat/
+
+# Weitere Umgebungen und System-Dateien
+venv/
+.DS_Store
+Thumbs.db

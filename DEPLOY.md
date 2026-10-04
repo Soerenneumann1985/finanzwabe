@@ -58,7 +58,7 @@ os.environ["FINANZ_HTTPS"] = "1"
 os.environ["FINANZ_BEHIND_PROXY"] = "1"
 os.environ["FINANZ_PUBLIC_URL"] = "https://DEINNAME.eu.pythonanywhere.com"
 os.environ["FINANZ_INVITE_CODE"] = "WABE2026"          # Einladungscode für Beta-Tester
-os.environ["FINANZ_OPERATOR_NAME"] = "Sören Neumann"
+os.environ["FINANZ_OPERATOR_NAME"] = "Max Mustermann"
 os.environ["FINANZ_OPERATOR_ADDRESS"] = "Straße Hausnummer, PLZ Ort"
 os.environ["FINANZ_CONTACT_EMAIL"] = "deine@adresse.de"
 # Optional für "Passwort vergessen" (SMTP deines E-Mail-Anbieters):
