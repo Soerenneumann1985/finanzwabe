@@ -9,6 +9,18 @@ selbst gebaute Excel-Tabelle und beantwortet drei Fragen auf einen Blick:
 
 Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installierbare Web-App (PWA).
 
+**Tech-Stack:** Python 3.12 · Flask · SQLAlchemy · SQLite · pytest · eigenes HTML/CSS ohne Frameworks
+
+<p align="center">
+  <img src="docs/screenshots/app-uebersicht.jpg" alt="Übersicht mit Nettovermögen und Budgets" width="230">
+  <img src="docs/screenshots/app-kredite.jpg" alt="Kredite mit Datum der Schuldenfreiheit" width="230">
+  <img src="docs/screenshots/app-vermoegen.jpg" alt="Vermögensverlauf" width="230">
+</p>
+
+<p align="center"><img src="docs/screenshots/app-desktop.jpg" alt="Finanzwabe am PC" width="760"></p>
+
+<p align="center"><sub>Alle Screenshots zeigen erfundene Demo-Daten (<code>python serve.py --demo</code>).</sub></p>
+
 ## Funktionen
 
 | Bereich | Was die App macht |
