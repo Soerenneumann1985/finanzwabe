@@ -137,6 +137,23 @@ class Recurring(Base):
     counter_account: Mapped[Account | None] = relationship(foreign_keys=[counter_account_id])
 
 
+class ImportRule(Base):
+    """What the user made of a bank booking text in the bank import.
+
+    key is the shortened bank text (e.g. "paypal lidl s"). The next import
+    suggests the same description and category for that key.
+    """
+
+    __tablename__ = "import_rule"
+    __table_args__ = (UniqueConstraint("user_id", "key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(200), default="")
+    category_id: Mapped[int] = mapped_column(ForeignKey("category.id", ondelete="CASCADE"))
+
+
 class Loan(Base):
     __tablename__ = "loan"
 

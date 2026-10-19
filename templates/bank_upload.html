@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Bank-Import{% endblock %}
+{% block content %}
+<div class="grid cols-even">
+  <section class="card">
+    <form class="form" method="post" enctype="multipart/form-data">
+      {{ ui.csrf() }}
+      <h2 style="margin-bottom: 8px">Kontoauszug übernehmen</h2>
+      <p class="muted">Lade den CSV-Export deiner Bank hoch <strong>oder</strong> füge die Umsätze aus dem Online-Banking ein. Danach siehst du jede Buchung in einer Vorschau. Erst dort wird gespeichert.</p>
+      {% if error %}<div class="flash error" style="margin-bottom: 14px">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+      <div class="field">
+        <label for="account_id">Die Umsätze gehören zum Konto</label>
+        <select id="account_id" name="account_id">
+          {% for a in accounts %}<option value="{{ a.id }}"{% if a.id == selected %} selected{% endif %}>{{ a.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="file">CSV-Datei der Bank</label>
+        <input type="file" id="file" name="file" accept=".csv,.txt,text/csv">
+      </div>
+      <div class="field">
+        <label for="text">… oder Umsätze einfügen</label>
+        <textarea id="text" name="text" rows="8" placeholder="16.10.&#10;PAYPAL EUROPE S.A.R.L. ET CIE S.C.A&#10;1000000000001/. LIDL S&#10;-8,13 €">{{ pasted }}</textarea>
+        <div class="hint">Im Online-Banking die Umsatzliste öffnen, alles markieren (Strg+A), kopieren (Strg+C) und hier einfügen (Strg+V).</div>
+      </div>
+      <button class="btn" type="submit">{{ icon("upload") }} Umsätze prüfen</button>
+    </form>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2>So funktioniert's</h2></div>
+    <div class="card-body" style="padding-top: 0">
+      <ul class="muted" style="margin: 0; padding-left: 18px">
+        <li><strong>CSV:</strong> Fast jede Bank bietet unter „Umsätze“ einen Export als CSV an. Spalten wie „Buchungstag“, „Betrag“ und „Verwendungszweck“ erkennt die App selbst.</li>
+        <li><strong>Einfügen:</strong> Klappt mit Umsatzlisten, in denen pro Buchung Datum, Empfänger und Betrag untereinander stehen. Überschriften wie „Oktober 2026“ liefern das Jahr.</li>
+        <li><strong>Doppelte:</strong> Buchungen mit gleichem Betrag, die höchstens 3 Tage auseinander schon im Konto stehen, sind in der Vorschau abgewählt.</li>
+        <li><strong>Lernt mit:</strong> Bezeichnung und Kategorie, die du in der Vorschau wählst, schlägt die App beim nächsten Import für denselben Empfänger wieder vor.</li>
+      </ul>
+      <p class="muted small" style="margin-bottom: 0">Du hast eine Excel-Tabelle? Dafür gibt es den <a href="{{ url_for('importer.upload') }}">Excel-Import</a>.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

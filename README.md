@@ -36,16 +36,26 @@ Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installi
 | Suche & Export | Suche nach Text, Kategorie oder Betrag; CSV-Export, der direkt in Excel aufgeht |
 | Konto | Mehrere Nutzer mit Login, Passwort ändern und vergessen (E-Mail), alle Daten löschen |
 | Excel-Import | Alte Tabelle mit Vorschau übernehmen: Buchungen, Kontostände, Kredite, Vermögensverlauf |
+| Bank-Import | CSV-Export der Bank hochladen oder Umsätze aus dem Online-Banking einfügen; erkennt Doppelte und lernt Bezeichnung und Kategorie je Empfänger |
 | Start & Betrieb | Beta-Einladungscode, AGB-Zustimmung, Impressum/Datenschutz/AGB, Backups, Admin-Werkzeug |
 
 ## Schnellstart (Windows)
 
-Doppelklick auf **`Finanzwabe starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
+Doppelklick auf **`Finanzwabe_starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
 selbst ein. Danach öffnet sich der Browser mit `http://localhost:8000`. Registriere dich und leg los.
 
-Oder im Terminal im Projektordner:
+Frisch von GitHub, im Terminal (PowerShell):
 
 ```
+git clone https://github.com/Soerenneumann1985/finanzwabe.git
+cd finanzwabe
+.\Finanzwabe_starten.bat
+```
+
+Oder von Hand im Projektordner:
+
+```
+py -3.12 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python serve.py
 ```
@@ -63,7 +73,7 @@ Die Demo-Anmeldung steht im Startfenster (und in `seed.py`). Deine echten Daten 
 
 ### Variante A: Zuhause im WLAN (sofort, kostenlos)
 
-1. Am PC `Finanzwabe starten.bat` ausführen. Das Fenster zeigt die Adresse fürs Handy,
+1. Am PC `Finanzwabe_starten.bat` ausführen. Das Fenster zeigt die Adresse fürs Handy,
    z. B. `http://192.168.178.23:8000`.
 2. Beim ersten Start fragt die Windows-Firewall nach: **„Private Netzwerke“ erlauben**.
 3. Am Handy (gleiches WLAN) die Adresse in Chrome öffnen und anmelden.

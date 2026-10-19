@@ -90,10 +90,10 @@ RULES = [
      r"|caf[eé]\b|kneipe|gastronom|strandbar", "Restaurant & Café", None),
     (r"urlaub|hotel|airbnb|center ?parc?k|\breise|\bflug|eurowings|lufthansa|ryanair|check ?24",
      "Urlaub", None),
-    (r"\bo2\b|mobilfunk|\bmobile\b|telekom|vodafone|congstar|1&1", "Handy & Internet", None),
+    (r"\bo2\b|mobilfunk|\bmobile\b|telekom|telefonica|vodafone|congstar|1&1", "Handy & Internet", None),
     (r"ig ?metall|gewerkschaft|verein|\bsv\b|fit+n|clever ?fit|mcfit|urban ?sports", "Abos & Mitgliedschaften", None),
     (r"netflix|dazn|spotify|disney|waipu|\bgmx\b|microsoft|xbox|office|hp druck|google|avast|antivir"
-     r"|software|\babo|abo\b|streaming|premium|rundfunk", "Abos & Mitgliedschaften", None),
+     r"|instant ink|software|\babo|abo\b|streaming|premium|rundfunk", "Abos & Mitgliedschaften", None),
     (r"fris[öo]e?r|friseur|drogerie|\bdm\b|rossmann", "Drogerie & Gesundheit", None),
     (r"verwarn|falschpark|strafe|bu(ß|ss)geld|stra(ß|ss)enverkehrsamt|ordnungsamt", "Auto & Mobilität", None),
     (r"\bkfz|\bauto|werkstatt|rep[ae]ratur|t[üu]v\b|taxi|\bpark|\bbahn\b|\bdb\b|zugticket|\bbus\b",

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Umsätze prüfen{% endblock %}
+{% block content %}
+<form method="post" action="{{ url_for('bank_import.preview') }}">
+  {{ ui.csrf() }}
+  <div class="stack">
+    {% if error %}<div class="flash error">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+
+    <section class="card">
+      <div class="kpis">
+        {{ ui.kpi("Gefunden", rows|length ~ " Buchungen") }}
+        {{ ui.kpi("Einnahmen", income|money) }}
+        {{ ui.kpi("Ausgaben", expenses|money) }}
+        {{ ui.kpi("Schon vorhanden?", duplicates) }}
+      </div>
+      <div class="card-foot muted small">Konto: <strong>{{ account.name }}</strong>. Prüfe Bezeichnung und Kategorie, abgewählte Buchungen werden nicht übernommen.{% if duplicates %} Buchungen mit gleichem Betrag, die schon im Konto stehen, sind abgewählt.{% endif %}</div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Buchungen</h2></div>
+      <ul class="list bank-rows">
+        {% for item in rows %}
+        <li class="bank-row{% if item.duplicate %} is-duplicate{% endif %}">
+          <input type="checkbox" name="take" value="{{ item.index }}" aria-label="Buchung übernehmen"{% if not item.duplicate %} checked{% endif %}>
+          <div class="bank-main">
+            <div class="bank-top">
+              <span class="small muted">{{ item.row.date|date_de }}{% if item.duplicate %} · <strong>schon vorhanden?</strong>{% endif %}{% if item.learned %} · gelernt{% endif %}</span>
+              <span class="amount">{{ ui.colored(item.row.cents) }}</span>
+            </div>
+            <div class="small muted bank-raw" title="{{ item.row.raw_text }}">{{ item.row.raw_text }}</div>
+            <div class="bank-fields">
+              <input type="text" name="description_{{ item.index }}" value="{{ item.description }}" maxlength="200" aria-label="Bezeichnung">
+              <select name="category_{{ item.index }}" aria-label="Kategorie">
+                {% for c in categories %}<option value="{{ c.id }}"{% if c.id == item.category_id %} selected{% endif %}>{{ c.name }}{% if c.kind == "transfer" %} (Umbuchung){% endif %}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <div class="actions">
+      <button class="btn" type="submit">{{ icon("check") }} Ausgewählte importieren</button>
+    </div>
+  </div>
+</form>
+<form method="post" action="{{ url_for('bank_import.cancel') }}" style="margin-top: 10px">
+  {{ ui.csrf() }}
+  <button class="btn secondary" type="submit">Abbrechen</button>
+</form>
+{% endblock %}
