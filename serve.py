@@ -5,12 +5,19 @@
     .venv\\Scripts\\python serve.py --port 8080
 
 The smartphone must be in the same Wi-Fi as this PC.
+
+Using several PCs: if the folder "Finanzwabe" exists in your OneDrive
+(or FINANZ_DATA_DIR points to a folder), the real data is read from there
+instead of instance/. Only ever run Finanzwabe on one PC at a time.
 """
 from __future__ import annotations
 
 import argparse
 import os
 import socket
+from pathlib import Path
+
+LOCK_FILE = "in_benutzung.txt"
 
 
 def local_network_ip() -> str:
@@ -36,6 +43,43 @@ def port_in_use(port: int) -> bool:
         return probe.connect_ex(("127.0.0.1", port)) == 0
 
 
+def shared_data_dir() -> Path | None:
+    """Folder that holds the real data for several PCs (OneDrive), if set up."""
+    custom = os.environ.get("FINANZ_DATA_DIR")
+    if custom:
+        return Path(custom)
+    onedrive = os.environ.get("OneDrive") or os.environ.get("OneDriveConsumer")
+    if onedrive and (Path(onedrive) / "Finanzwabe").is_dir():
+        return Path(onedrive) / "Finanzwabe"
+    return None
+
+
+def use_shared_data_dir(data_dir: Path) -> Path:
+    """Point the app at the shared folder and mark it as in use by this PC."""
+    database = data_dir / "finanz.db"
+    if not database.is_file():
+        print(f"\n  Datenbank nicht gefunden: {database}")
+        print("  Ist OneDrive gestartet und fertig synchronisiert? Dann bitte neu starten.\n")
+        raise SystemExit(1)
+    os.environ["FINANZ_DATABASE_URL"] = "sqlite:///" + database.as_posix()
+    secret = data_dir / "secret_key"
+    if secret.is_file():
+        os.environ["FINANZ_SECRET_KEY"] = secret.read_text(encoding="utf-8").strip()
+
+    this_pc = socket.gethostname()
+    lock = data_dir / LOCK_FILE
+    if lock.is_file():
+        other_pc = lock.read_text(encoding="utf-8").strip()
+        if other_pc and other_pc != this_pc:
+            print(f"\n  Achtung: Finanzwabe ist laut OneDrive noch auf \"{other_pc}\" geöffnet.")
+            print("  Wenn beide PCs gleichzeitig schreiben, gehen Einträge verloren.")
+            answer = input("  Dort zuerst beenden! Trotzdem starten? (j/n) ").strip().lower()
+            if answer != "j":
+                raise SystemExit(1)
+    lock.write_text(this_pc, encoding="utf-8")
+    return lock
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Finanzwabe starten")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
@@ -51,6 +95,11 @@ def main() -> None:
     if args.demo:
         import seed
         os.environ["FINANZ_DATABASE_URL"] = seed.demo_database_url()
+
+    lock = None
+    data_dir = None if args.demo or os.environ.get("FINANZ_DATABASE_URL") else shared_data_dir()
+    if data_dir:
+        lock = use_shared_data_dir(data_dir)
 
     from waitress import serve
     from app import create_app
@@ -69,9 +118,15 @@ def main() -> None:
         print(f"  Smartphone (WLAN):  http://{local_network_ip()}:{args.port}")
     if args.demo:
         print(f"  Demo-Anmeldung:     {seed.DEMO_EMAIL} / {seed.DEMO_PASSWORD}")
+    if data_dir:
+        print(f"  Daten (OneDrive):   {data_dir}")
     print("  Beenden mit Strg+C")
     print()
-    serve(app, host=host, port=args.port, threads=6)
+    try:
+        serve(app, host=host, port=args.port, threads=6)
+    finally:
+        if lock and lock.is_file():
+            lock.unlink()
 
 
 if __name__ == "__main__":

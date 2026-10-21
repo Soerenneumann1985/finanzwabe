@@ -105,12 +105,24 @@ dort dauerhaft gespeichert, HTTPS ist inklusive.
 Sobald die App online mit HTTPS läuft, erzeugt [PWABuilder](https://www.pwabuilder.com) daraus ein
 Android-Paket (Trusted Web Activity) für den Play Store. Am Code ändert sich dafür nichts.
 
+## Auf mehreren PCs nutzen (OneDrive)
+
+1. In OneDrive einen Ordner `Finanzwabe` anlegen und `instance\finanz.db` sowie `instance\secret_key`
+   hineinkopieren (Rechtsklick auf den Ordner → *Immer auf diesem Gerät behalten*).
+2. Auf jedem PC mit demselben Microsoft-Konto bei OneDrive anmelden und Finanzwabe wie gewohnt starten.
+   `serve.py` findet den Ordner von selbst und zeigt beim Start `Daten (OneDrive): …` an.
+
+Finanzwabe immer nur auf **einem** PC gleichzeitig laufen lassen und mit Strg+C beenden. Die Datei
+`in_benutzung.txt` im OneDrive-Ordner warnt, falls die App auf einem anderen PC noch offen ist.
+Ein anderer Ordner lässt sich mit `FINANZ_DATA_DIR` festlegen.
+
 ## Einstellungen über Umgebungsvariablen
 
 | Variable | Bedeutung | Standard |
 | --- | --- | --- |
 | `FINANZ_DATABASE_URL` | Datenbank | `sqlite:///instance/finanz.db` |
 | `FINANZ_SECRET_KEY` | Schlüssel für das Login-Cookie | wird in `instance/secret_key` erzeugt |
+| `FINANZ_DATA_DIR` | Ordner mit `finanz.db` für mehrere PCs | `OneDrive\Finanzwabe`, falls vorhanden |
 | `FINANZ_ALLOW_REGISTRATION` | `0` = keine neuen Registrierungen | `1` |
 | `FINANZ_HTTPS` | `1` = Cookie nur über HTTPS | aus |
 | `FINANZ_BEHIND_PROXY` | `1` hinter einem Hosting-Proxy | aus |
