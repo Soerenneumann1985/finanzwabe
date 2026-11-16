@@ -96,4 +96,8 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
 - [x] Schritt 4: Buchungsvorschläge mit Bestätigung (Werkzeug `buchung_vorschlagen` speichert nichts;
   Vorschau-Karte mit „Bestätigen“, „Ändern“ (vorausgefülltes Formular) und „Abbrechen“; der Endpunkt
   `/wabi/buchung` prüft beim Bestätigen alles erneut mit den Regeln des Buchungsformulars)
-- [ ] Schritt 5–6
+- [x] Schritt 5: Spracheingabe (Web Speech API, Deutsch, Mikrofon-Knopf; Frage wird nach dem Sprechen
+  automatisch gesendet, Buchungen brauchen weiter „Bestätigen“). Nur auf sicheren Seiten (HTTPS oder
+  localhost) – im Heim-WLAN über http://192.168… blendet die App den Knopf aus. Chrome schickt die
+  Aufnahme zur Erkennung an Google; der Hinweis im Chatfenster sagt das.
+- [ ] Schritt 6

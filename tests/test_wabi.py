@@ -1,6 +1,7 @@
 """Tests for Wabi, the chat assistant. No real API calls: Claude is replaced by a fake."""
 import datetime as dt
 import json
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -541,6 +542,14 @@ def test_pages_show_wabi_only_when_logged_in(client, anna):
     assert "wabi.js" in page
     logout(client)
     assert "wabi-home" not in client.get("/anmelden").text
+
+
+def test_microphone_button_starts_hidden_and_hint_mentions_google(client, anna):
+    page = client.get("/").text
+    mic = re.search(r'<button class="wabi-mic"[^>]*>', page).group(0)
+    assert " hidden" in mic  # wabi.js shows it only where speech recognition works
+    assert 'aria-label="Spracheingabe starten"' in mic
+    assert "Google" in page and "Tippen geht immer auch" in page
 
 
 def test_csrf_protects_endpoint(app, anna):

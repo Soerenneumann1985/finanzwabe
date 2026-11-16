@@ -74,6 +74,8 @@
       <p>Deine Fragen und die Zahlen, die Wabi dafür braucht, werden an <strong>Claude</strong> (Anthropic)
         in der Cloud gesendet – nie die ganze Datenbank. Wabi wertet nur deine Daten aus und gibt keine
         Anlage- oder Rechtsberatung.</p>
+      <p>Die Spracheingabe (Mikrofon) nutzt die Spracherkennung deines Browsers; Chrome schickt die
+        Aufnahme dafür an Google. Tippen geht immer auch.</p>
       <button class="btn small" id="wabi-hint-ok" type="button">Verstanden</button>
     </div>
   </div>
@@ -90,6 +92,9 @@
   <form class="wabi-form" id="wabi-form" autocomplete="off">
     <label class="visually-hidden" for="wabi-input">Deine Frage an Wabi</label>
     <textarea id="wabi-input" rows="1" maxlength="1000" placeholder="Frag Wabi …" enterkeyhint="send"></textarea>
+    {# Shown by wabi.js only if the browser offers speech recognition on a secure page (HTTPS/localhost). #}
+    <button class="wabi-mic" id="wabi-mic" type="button" aria-label="Spracheingabe starten" aria-pressed="false"
+            title="Spracheingabe" hidden>{{ icon("mic", 22) }}</button>
     <button class="wabi-send" type="submit" aria-label="Senden">{{ icon("send", 22) }}</button>
   </form>
 </section>

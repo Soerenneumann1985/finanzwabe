@@ -32,7 +32,8 @@ ICONS = {
     "phone": '<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/>',
     "hexagon": '<path d="M12 2.8 20 7.4v9.2l-8 4.6-8-4.6V7.4z"/>',
     "close": '<path d="M6 6l12 12M18 6 6 18"/>',
-    "send": '<path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="M21 3 10 13"/>',
+    "mic": '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+    "send":'<path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="M21 3 10 13"/>',
 }
 
 

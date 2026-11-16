@@ -107,6 +107,7 @@
 
   async function close() {
     if (panel.hidden) return;
+    stopListening();
     home.setAttribute("aria-expanded", "false");
     avatar.classList.add("is-hidden");
     const start = avatar;
@@ -297,6 +298,79 @@
     const chip = event.target.closest(".wabi-chip");
     if (chip) ask(chip.textContent);
   });
+
+  // --- Voice input (Web Speech API of the browser) -------------------------------------------
+  // Only on secure pages (HTTPS or localhost): browsers block the microphone elsewhere,
+  // e.g. on http://192.168.… in the home Wi-Fi. Then the button stays hidden and typing works.
+  const mic = document.getElementById("wabi-mic");
+  const Recognition = () => window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SPEECH_ERRORS = {
+    "not-allowed": "Ich darf das Mikrofon nicht benutzen. Erlaube es in den Browser-Einstellungen für diese Seite.",
+    "service-not-allowed": "Die Spracherkennung ist in diesem Browser gesperrt. Du kannst deine Frage gern tippen.",
+    "no-speech": "Ich habe nichts gehört. Tipp noch mal aufs Mikrofon und sprich ruhig etwas lauter.",
+    "audio-capture": "Ich finde kein Mikrofon. Ist eins angeschlossen?",
+    "network": "Die Spracherkennung ist gerade nicht erreichbar. Du kannst deine Frage gern tippen.",
+  };
+  let recognition = null;
+  const placeholder = input.placeholder;
+
+  function setListening(on) {
+    mic.classList.toggle("is-listening", on);
+    mic.setAttribute("aria-pressed", on ? "true" : "false");
+    mic.setAttribute("aria-label", on ? "Spracheingabe beenden" : "Spracheingabe starten");
+    input.placeholder = on ? "Ich höre zu …" : placeholder;
+  }
+
+  function stopListening() {
+    if (recognition) recognition.abort();
+  }
+
+  function startListening() {
+    const SpeechRecognition = Recognition();
+    if (!SpeechRecognition || busy) return;
+    const session = new SpeechRecognition();
+    session.lang = "de-DE";
+    session.interimResults = true;  // show the words while speaking
+    session.continuous = false;     // one question, then stop by itself
+    session.maxAlternatives = 1;
+    let spoken = "";
+    let failed = false;
+
+    session.onresult = (event) => {
+      spoken = Array.from(event.results).map((result) => result[0].transcript).join("");
+      input.value = spoken;
+    };
+    session.onerror = (event) => {
+      failed = true;
+      if (event.error !== "aborted") {
+        addMessage(SPEECH_ERRORS[event.error] || "Die Spracheingabe hat nicht geklappt. Du kannst gern tippen.",
+                   "wabi", true);
+      }
+    };
+    session.onend = () => {
+      recognition = null;
+      setListening(false);
+      const question = spoken.trim();
+      if (!failed && question) {
+        input.value = "";
+        ask(question);  // a booking still needs "Bestätigen" on the card
+      }
+    };
+
+    try {
+      session.start();
+    } catch {
+      addMessage("Die Spracheingabe ließ sich nicht starten. Du kannst gern tippen.", "wabi", true);
+      return;
+    }
+    recognition = session;
+    setListening(true);
+  }
+
+  if (mic && Recognition() && window.isSecureContext) {
+    mic.hidden = false;
+    mic.addEventListener("click", () => (recognition ? recognition.stop() : startListening()));
+  }
 
   // Wabi has something to say: the cloud notice was not read yet.
   if (storageGet(HINT_KEY) !== "1") setTimeout(() => wiggle(home), 1200);
