@@ -72,10 +72,11 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.teardown_appcontext(lambda _exc: models.db.remove())
 
     from views import (
-        accounts, auth, bank_import, categories, importer, legal, loans, overview, pwa, recurring, settings, transactions,
+        accounts, assistant, auth, bank_import, categories, importer, legal, loans, overview, pwa, recurring,
+        settings, transactions,
     )
     for module in (auth, overview, transactions, recurring, accounts, categories, loans, settings,
-                   importer, bank_import, legal, pwa):
+                   importer, bank_import, legal, pwa, assistant):
         app.register_blueprint(module.bp)
 
     _register_security(app)

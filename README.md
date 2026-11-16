@@ -116,6 +116,19 @@ Finanzwabe immer nur auf **einem** PC gleichzeitig laufen lassen und mit Strg+C 
 `in_benutzung.txt` im OneDrive-Ordner warnt, falls die App auf einem anderen PC noch offen ist.
 Ein anderer Ordner lässt sich mit `FINANZ_DATA_DIR` festlegen.
 
+## Wabi, der KI-Assistent (Prototyp)
+
+Die kleine Roboterbiene neben dem Logo beantwortet Fragen zu deinen eigenen Finanzen, z. B. „Wie viel habe
+ich im Oktober für Supermarkt ausgegeben?“ oder „Wie hoch ist mein Sofortkredit noch?“. Wabi nutzt die
+Claude-API von Anthropic mit Werkzeugen, die nur lesen dürfen; an Claude gehen nur die Zahlen, die für die
+Frage nötig sind. Plan und Stand: [WABI_PLAN.md](WABI_PLAN.md).
+
+Einrichten: In der [Claude Console](https://console.anthropic.com) einen API-Schlüssel anlegen und Guthaben
+aufladen. Den Schlüssel als Datei **`anthropic_api_key`** (oder `anthropic_api_key.txt`) in den
+OneDrive-Ordner `Finanzwabe` neben `finanz.db` legen, alternativ in die Umgebungsvariable
+`ANTHROPIC_API_KEY`. Ohne Schlüssel bleibt Wabi sichtbar und erklärt, dass er noch eingerichtet werden muss.
+Das Modell steht in `wabi.py` (`MODEL`).
+
 ## Einstellungen über Umgebungsvariablen
 
 | Variable | Bedeutung | Standard |
