@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import logging
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify, request, url_for
 
 import wabi
+from models import Transaction, db
 
 bp = Blueprint("assistant", __name__)
 log = logging.getLogger(__name__)
@@ -43,9 +44,35 @@ def message():
         else:
             text = "Bei Claude ist gerade etwas schiefgelaufen. Versuch es bitte später noch einmal."
     else:
-        return jsonify(reply=result.text, configured=True, links=result.links,
+        return jsonify(reply=result.text, configured=True, links=result.links, proposal=result.proposal,
                        usage={"input_tokens": result.input_tokens, "output_tokens": result.output_tokens})
     return jsonify(reply=text, configured=True, error=True)
+
+
+@bp.route("/wabi/buchung", methods=["POST"])
+def confirm_booking():
+    """Saves a suggested booking after the user tapped "Bestätigen".
+
+    The browser sends the card back. Nothing from it is trusted: every field is
+    checked again with the rules of the booking form, only for the user's own
+    accounts and categories. Claude is not involved in this request.
+    """
+    if g.user is None:
+        return jsonify(error="Bitte melde dich zuerst an."), 401
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error="Kein Vorschlag erhalten."), 400
+    fields = {key: payload.get(key) for key in
+              ("amount", "category_id", "account_id", "counter_account_id", "description", "date")}
+    data, errors, day = wabi.check_booking(g.user.id, fields)
+    if errors:
+        return jsonify(error="Die Buchung ist nicht vollständig: " + " ".join(errors.values()),
+                       errors=errors), 400
+    db.add(Transaction(user_id=g.user.id, date=day, **data))
+    db.commit()
+    return jsonify(ok=True, message="Gespeichert.",
+                   month_url=url_for("overview.month", year=day.year, month=day.month),
+                   month_label=f"{wabi.MONTHS[day.month - 1]} {day.year}")
 
 
 @bp.app_context_processor

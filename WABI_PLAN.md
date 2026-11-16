@@ -93,4 +93,7 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
 - [x] Schritt 2: API-Anbindung und Fragen beantworten (Prototyp)
 - [x] Schritt 3: App-Führung und Navigation (Werkzeuge `app_bereich_erklaeren` und
   `zu_bereich_navigieren`, Link-Knöpfe unter Wabis Antwort; Wabi öffnet nie selbst eine Seite)
-- [ ] Schritt 4–6
+- [x] Schritt 4: Buchungsvorschläge mit Bestätigung (Werkzeug `buchung_vorschlagen` speichert nichts;
+  Vorschau-Karte mit „Bestätigen“, „Ändern“ (vorausgefülltes Formular) und „Abbrechen“; der Endpunkt
+  `/wabi/buchung` prüft beim Bestätigen alles erneut mit den Regeln des Buchungsformulars)
+- [ ] Schritt 5–6

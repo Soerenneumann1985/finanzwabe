@@ -1027,6 +1027,40 @@ textarea:focus { border-color: var(--royal); box-shadow: 0 0 0 4px color-mix(in 
   box-shadow: 0 3px 10px color-mix(in srgb, var(--royal) 30%, transparent);
 }
 .wabi-link:hover { background: var(--royal-hover); }
+.wabi-card {
+  align-self: flex-start;
+  width: min(100%, 300px);
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1.5px solid color-mix(in srgb, var(--royal) 45%, var(--border));
+  box-shadow: var(--shadow);
+}
+.wabi-card-title { font-weight: 700; margin-bottom: 6px; }
+.wabi-card dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 8px; font-size: .9rem; }
+.wabi-card dt { color: var(--text-2); }
+.wabi-card dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.wabi-card-status { margin: 0 0 8px; font-size: .85rem; color: var(--text-2); }
+.wabi-card.is-saved { border-color: var(--good); }
+.wabi-card.is-saved .wabi-card-status { color: var(--pos); font-weight: 650; }
+.wabi-card.is-cancelled { opacity: .65; }
+.wabi-card-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.wabi-card-actions:empty { display: none; }
+.wabi-card-confirm, .wabi-card-secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+.wabi-card-confirm { border: 0; color: #fff; background: linear-gradient(150deg, #4a74f5, var(--royal)); }
+.wabi-card-secondary { border: 1.5px solid var(--border); color: var(--link); background: transparent; }
+.wabi-card-confirm:disabled, .wabi-card-secondary:disabled { opacity: .5; cursor: default; }
 .wabi-msg.is-error { border-color: var(--over); color: var(--over-ink); background: var(--over-bg); }
 .wabi-typing { display: inline-flex; gap: 4px; padding: 13px 14px; }
 .wabi-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }

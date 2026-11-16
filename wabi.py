@@ -20,7 +20,7 @@ from pathlib import Path
 import calculations as calc
 import services
 from models import ACCOUNT_TYPES
-from money import NBSP, format_cents
+from money import NBSP, format_cents, format_input
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ NOT_CONFIGURED = (
     "„anthropic_api_key“ in den Finanzwabe-Ordner in OneDrive (neben finanz.db) und starte die App neu."
 )
 
-LINK_NOTE = re.compile(r"\n?\[Link-Knöpfe:[^\]]*\]")
+LINK_NOTE = re.compile(r"\n?\[(?:Link-Knöpfe|Vorschlag)[^\]]*\]")  # markers for the history only
 
 MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
           "August", "September", "Oktober", "November", "Dezember"]
@@ -400,6 +400,95 @@ def tool_navigate(user_id: int, data: dict, today: dt.date) -> dict:
             "hinweis": "Der Link erscheint als Knopf unter deiner Antwort. Schreib die Adresse nicht in den Text."}
 
 
+# --- Booking suggestions -------------------------------------------------------------------
+# Wabi never saves a booking. The tool only checks the input with the same rules as the
+# booking form and returns a suggestion. The user sees it as a card and saves it with
+# "Bestätigen" (views/assistant.py checks everything again).
+
+def check_booking(user_id: int, fields: dict) -> tuple[dict, dict[str, str], dt.date | None]:
+    """Validate booking fields like the booking form does. Returns (data, errors, day)."""
+    from werkzeug.datastructures import MultiDict
+
+    from views.common import parse_date
+    from views.transactions import read_booking_fields
+
+    form = MultiDict({key: "" if value is None else str(value) for key, value in fields.items()})
+    data, errors = read_booking_fields(form, services.accounts_of(user_id), services.categories_of(user_id))
+    day = parse_date(form.get("date"))
+    if day is None:
+        errors["date"] = "Bitte ein Datum im Format JJJJ-MM-TT angeben."
+    elif not dt.date(1900, 1, 1) <= day <= dt.date(2200, 12, 31):
+        errors["date"] = "Das Datum liegt außerhalb des gültigen Bereichs."
+    return data, errors, day
+
+
+def proposal_for(user_id: int, data: dict, day: dt.date) -> dict:
+    """The checked booking as shown on the card (and as sent back on "Bestätigen")."""
+    accounts = {a.id: a for a in services.accounts_of(user_id)}
+    category = next(c for c in services.categories_of(user_id) if c.id == data["category_id"])
+    entered = calc.entered_amount(data["amount_cents"], category.kind)
+    counter = accounts.get(data["counter_account_id"]) if data["counter_account_id"] else None
+    return {
+        "date": day.isoformat(),
+        "date_label": f"{day:%d.%m.%Y}",
+        "amount": format_input(entered),
+        "amount_label": euro(entered),
+        "kind": category.kind,
+        "kind_label": category.kind_label,
+        "description": data["description"],
+        "category_id": category.id,
+        "category": category.name,
+        "account_id": data["account_id"],
+        "account": accounts[data["account_id"]].name,
+        "counter_account_id": counter.id if counter else None,
+        "counter_account": counter.name if counter else None,
+    }
+
+
+def tool_suggest_booking(user_id: int, data: dict, today: dt.date) -> dict:
+    """Check a booking the user dictated and return it as a suggestion. Saves nothing."""
+    categories = services.categories_of(user_id)
+    accounts = services.accounts_of(user_id)
+    if not data.get("kategorie"):
+        raise ToolError("Welche Kategorie? Frag den Nutzer oder wähle eine passende aus kategorien_auflisten.")
+    category = find_by_name(categories, data["kategorie"], "Kategorie")
+    if data.get("konto"):
+        account = find_by_name(accounts, data["konto"], "Konto")
+    else:
+        account = next((a for a in accounts if a.type == "giro"), accounts[0] if accounts else None)
+        if account is None:
+            raise ToolError("Es gibt noch kein Konto. Der Nutzer muss zuerst eins anlegen.")
+    counter = None
+    if data.get("gegenkonto"):
+        if category.kind != calc.TRANSFER:
+            raise ToolError("Ein Gegenkonto gibt es nur bei Umbuchungen.")
+        counter = find_by_name(accounts, data["gegenkonto"], "Konto")
+
+    amount = data.get("betrag")
+    if isinstance(amount, (int, float)) and not isinstance(amount, bool):
+        amount = f"{amount:.2f}".replace(".", ",")
+    checked, errors, day = check_booking(user_id, {
+        "amount": amount,
+        "category_id": category.id,
+        "account_id": account.id,
+        "counter_account_id": counter.id if counter else "",
+        "description": data.get("beschreibung") or "",
+        "date": data.get("datum") or today.isoformat(),
+    })
+    if errors:
+        raise ToolError(" ".join(errors.values()))
+    proposal = proposal_for(user_id, checked, day)
+    return {
+        "vorschlag": {"datum": proposal["date_label"], "betrag": proposal["amount_label"],
+                      "art": proposal["kind_label"], "beschreibung": proposal["description"],
+                      "kategorie": proposal["category"], "konto": proposal["account"],
+                      **({"auf_konto": proposal["counter_account"]} if counter else {})},
+        "status": "NICHT gespeichert. Der Nutzer sieht eine Vorschau-Karte und speichert selbst mit "
+                  "„Bestätigen“ (oder ändert bzw. bricht ab).",
+        "_card": proposal,
+    }
+
+
 @dataclass
 class Tool:
     function: object
@@ -459,6 +548,19 @@ TOOLS: dict[str, Tool] = {
          "monat": {"type": "integer", "description": "1 bis 12 (nur für monat)"}},
         ("bereich",),
     ),
+    "buchung_vorschlagen": Tool(
+        tool_suggest_booking,
+        "Bereitet eine neue Buchung als Vorschlag vor, z. B. für 'Trag 23,50 € Tankstelle von heute ein'. "
+        "Speichert NICHTS: Der Nutzer sieht eine Vorschau-Karte und bestätigt selbst. Die Art (Ausgabe, "
+        "Einnahme, Umbuchung) ergibt sich aus der Kategorie.",
+        {"betrag": {"type": "string", "description": "Positiver Betrag im deutschen Format, z. B. 23,50"},
+         "kategorie": {"type": "string", "description": "Name einer vorhandenen Kategorie"},
+         "beschreibung": {"type": "string", "description": "Kurzer Text, z. B. Aral oder Wocheneinkauf"},
+         "datum": {"type": "string", "description": "JJJJ-MM-TT, ohne Angabe heute"},
+         "konto": {"type": "string", "description": "Name des Kontos, ohne Angabe das Girokonto"},
+         "gegenkonto": {"type": "string", "description": "Nur bei Umbuchungen: Zielkonto"}},
+        ("betrag", "kategorie"),
+    ),
     "kategorien_auflisten": Tool(
         tool_categories, "Namen aller Kategorien (mit Art, Fixkosten, Budget) und aller Konten."),
 }
@@ -510,8 +612,14 @@ Zähl höchstens 5 einzelne Buchungen auf.
 - Frühere Antworten von dir enden mit [Link-Knöpfe: …], wenn dort Knöpfe gezeigt wurden. Diese Knöpfe \
 waren schon da; wiederhole sie nicht und schreib diese Markierung nicht selbst.
 - Du gibst keine Anlage-, Steuer- oder Rechtsberatung, sondern wertest nur die Daten der App aus.
-- Du kannst nichts buchen, ändern oder löschen. Für Fragen ohne Bezug zu den Finanzen oder zur App \
-sag kurz, dass du dabei nicht helfen kannst."""
+- Neue Buchungen bereitest du mit buchung_vorschlagen vor. Gespeichert wird erst, wenn der Nutzer auf der \
+Vorschau-Karte „Bestätigen“ tippt. Sag deshalb nie, dass etwas gespeichert oder eingetragen ist, sondern \
+z. B. „Bitte prüfen und bestätigen“. Ohne Datum gilt heute, ohne Konto das Girokonto. Fehlt der Betrag oder \
+ist die Kategorie unklar, frag kurz nach. Pro Antwort höchstens ein Vorschlag.
+- Frühere Antworten können mit [Vorschlag …] enden: dort steht, ob der Nutzer ihn gespeichert oder \
+abgebrochen hat. Schreib diese Markierung nicht selbst.
+- Du kannst nichts löschen, keine bestehenden Buchungen ändern und keine Einstellungen ändern. Für Fragen \
+ohne Bezug zu den Finanzen oder zur App sag kurz, dass du dabei nicht helfen kannst."""
 
 
 @dataclass
@@ -521,6 +629,7 @@ class Reply:
     output_tokens: int = 0
     tools_used: list[str] = field(default_factory=list)
     links: list[dict] = field(default_factory=list)  # link buttons below the answer: {"title", "url"}
+    proposal: dict | None = None  # booking suggestion for the preview card (not saved)
 
     def add_link(self, title: str, url: str) -> None:
         if all(link["url"] != url for link in self.links):
@@ -602,6 +711,10 @@ def chat(client, user_id: int, history: list[dict], today: dt.date | None = None
             if call.name == "zu_bereich_navigieren" and not is_error:
                 target = json.loads(content)
                 reply.add_link(target["titel"], target["link"])
+            if call.name == "buchung_vorschlagen" and not is_error:
+                result = json.loads(content)
+                reply.proposal = result.pop("_card")  # for the card in the browser only
+                content = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
             results.append({"type": "tool_result", "tool_use_id": call.id, "content": content,
                             **({"is_error": True} if is_error else {})})
         messages.append({"role": "user", "content": results})

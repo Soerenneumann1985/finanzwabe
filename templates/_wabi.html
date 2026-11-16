@@ -56,6 +56,8 @@
 
 <section class="wabi-panel" id="wabi-panel" role="dialog" aria-labelledby="wabi-title" hidden
          data-url="{{ url_for('assistant.message') }}" data-csrf="{{ csrf_token() }}"
+         data-booking-url="{{ url_for('assistant.confirm_booking') }}"
+         data-new-booking-url="{{ url_for('transactions.new') }}"
          data-configured="{{ '1' if wabi_configured else '0' }}">
   <header class="wabi-head-bar">
     <span class="wabi-avatar" id="wabi-avatar">{{ bee() }}</span>

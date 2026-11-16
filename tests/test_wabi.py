@@ -207,6 +207,131 @@ def test_standing_orders_and_categories(app, anna):
     assert any(c["name"] == "Supermarkt" for c in result["kategorien"])
 
 
+# --- Booking suggestions and confirmation -------------------------------------------------------
+
+def count_transactions(app, user_id):
+    with app.app_context():
+        return len(db.scalars(select(Transaction).where(Transaction.user_id == user_id)).all())
+
+
+def test_suggest_booking_saves_nothing(app, anna):
+    before = count_transactions(app, anna)
+    result, error = call(app, anna, "buchung_vorschlagen",
+                         {"betrag": "23,50", "kategorie": "tankstelle", "beschreibung": "Aral"})
+    assert not error
+    assert result["vorschlag"] == {"datum": "16.11.2026", "betrag": "23,50 €", "art": "Ausgabe",
+                                   "beschreibung": "Aral", "kategorie": "Tankstelle", "konto": "Girokonto"}
+    assert "NICHT gespeichert" in result["status"]
+    card = result["_card"]
+    assert card["amount"] == "23,50" and card["kind"] == "expense" and card["date"] == "2026-11-16"
+    assert count_transactions(app, anna) == before
+
+
+def test_suggest_income_with_number_and_date(app, anna):
+    result, error = call(app, anna, "buchung_vorschlagen",
+                         {"betrag": 80, "kategorie": "Nebeneinkünfte", "datum": "2026-11-10"})
+    assert not error
+    assert result["vorschlag"]["art"] == "Einnahme"
+    assert result["vorschlag"]["betrag"] == "80,00 €"
+    assert result["vorschlag"]["datum"] == "10.11.2026"
+
+
+def test_suggest_transfer_with_counter_account(app, anna):
+    with app.app_context():
+        db.add(Account(user_id=anna, name="Tagesgeld", type="savings", base_balance_cents=0))
+        db.commit()
+    result, error = call(app, anna, "buchung_vorschlagen",
+                         {"betrag": "100", "kategorie": "Sparen", "gegenkonto": "Tagesgeld"})
+    assert not error
+    assert result["vorschlag"]["auf_konto"] == "Tagesgeld"
+    message, error = call(app, anna, "buchung_vorschlagen",
+                          {"betrag": "5", "kategorie": "Supermarkt", "gegenkonto": "Tagesgeld"})
+    assert error and "nur bei Umbuchungen" in message
+
+
+@pytest.mark.parametrize("data, expected", [
+    ({"betrag": "0", "kategorie": "Supermarkt"}, "nicht 0"),
+    ({"betrag": "zwanzig", "kategorie": "Supermarkt"}, "kein gültiger Betrag"),
+    ({"betrag": "5", "kategorie": "Pferde"}, "nicht gefunden"),
+    ({"betrag": "5"}, "Welche Kategorie"),
+    ({"betrag": "5", "kategorie": "Supermarkt", "konto": "Schweizer Konto"}, "nicht gefunden"),
+    ({"betrag": "5", "kategorie": "Supermarkt", "datum": "morgen"}, "JJJJ-MM-TT"),
+])
+def test_suggest_booking_rejects_bad_input(app, anna, data, expected):
+    message, error = call(app, anna, "buchung_vorschlagen", data)
+    assert error and expected in message
+
+
+def test_chat_returns_card_but_not_to_claude(app, anna):
+    fake = FakeClient(
+        response([tool_block("buchung_vorschlagen", {"betrag": "23,50", "kategorie": "Tankstelle"})],
+                 stop_reason="tool_use"),
+        response([text_block("Bitte prüfen und bestätigen.")]),
+    )
+    with app.app_context():
+        reply = wabi.chat(fake, anna, [{"role": "user", "content": "Trag 23,50 Tanken ein"}], TODAY)
+    assert reply.proposal["category"] == "Tankstelle" and reply.proposal["amount_label"] == "23,50 €"
+    sent_back = fake.requests[1]["messages"][-1]["content"][0]["content"]
+    assert "_card" not in sent_back and "category_id" not in sent_back
+
+
+def card_for(app, user_id, **data):
+    result, error = call(app, user_id, "buchung_vorschlagen", {"betrag": "23,50", "kategorie": "Tankstelle"} | data)
+    assert not error
+    card = result["_card"]
+    return {key: card[key] for key in
+            ("amount", "category_id", "account_id", "counter_account_id", "description", "date")}
+
+
+def test_confirm_saves_the_booking(app, client, anna):
+    before = count_transactions(app, anna)
+    response = client.post("/wabi/buchung", json=card_for(app, anna, beschreibung="Aral"))
+    data = response.get_json()
+    assert response.status_code == 200 and data["ok"] is True
+    assert data["month_url"] == "/monat/2026/11"
+    assert count_transactions(app, anna) == before + 1
+    with app.app_context():
+        saved = db.scalar(select(Transaction).where(Transaction.user_id == anna, Transaction.description == "Aral",
+                                                    Transaction.date == TODAY))
+        assert saved.amount_cents == -2350  # expenses are stored negative, like in the form
+
+
+def test_confirm_checks_everything_again(app, client, anna):
+    before = count_transactions(app, anna)
+    card = card_for(app, anna)
+    for broken in ({"amount": "0"}, {"amount": "abc"}, {"date": "kein Datum"}, {"category_id": 99999},
+                   {"account_id": None}):
+        response = client.post("/wabi/buchung", json=card | broken)
+        assert response.status_code == 400, broken
+    assert client.post("/wabi/buchung", data="kaputt").status_code == 400
+    assert count_transactions(app, anna) == before
+
+
+def test_confirm_rejects_other_users_accounts_and_categories(app, client, anna):
+    logout(client)
+    ben = make_user(app, client, "ben@example.com")
+    anna_card = card_for(app, anna)
+    response = client.post("/wabi/buchung", json=anna_card)  # Ben sends Anna's ids
+    assert response.status_code == 400
+    assert count_transactions(app, ben) == 5
+
+
+def test_confirm_needs_login(client):
+    assert client.post("/wabi/buchung", json={"amount": "1"}).status_code == 401
+
+
+def test_change_opens_prefilled_form(client, anna):
+    page = client.get("/buchungen/neu?betrag=23,50&beschreibung=Aral&art=expense").text
+    assert 'value="23,50"' in page and 'value="Aral"' in page
+
+
+def test_markers_are_removed_from_answers(app, anna):
+    fake = FakeClient(response([text_block("Erledigt?\n[Vorschlag 23,50 € Aral: vom Nutzer gespeichert]")]))
+    with app.app_context():
+        reply = wabi.chat(fake, anna, [{"role": "user", "content": "Und?"}], TODAY)
+    assert reply.text == "Erledigt?"
+
+
 # --- App guide and navigation ---------------------------------------------------------------
 
 def test_every_section_path_exists(app, client, anna):

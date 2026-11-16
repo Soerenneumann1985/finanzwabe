@@ -44,7 +44,13 @@
       { transform: `translate(${midX}px, ${midY}px) rotate(12deg) scale(1.15)` },
       { transform: `translate(${b.left}px, ${b.top}px) rotate(0deg)` },
     ], { duration: 650, easing: "ease-in-out" });
-    return animation.finished.catch(() => {}).then(() => flyer.classList.remove("is-flying"));
+    // Browsers pause animations on pages that are not drawn (app in the background).
+    // The chat window must open anyway, so the flight ends after 0.9 s at the latest.
+    const timeout = new Promise((resolve) => setTimeout(resolve, 900));
+    return Promise.race([animation.finished.catch(() => {}), timeout]).then(() => {
+      animation.cancel();
+      flyer.classList.remove("is-flying");
+    });
   }
 
   function addMessage(text, from, isError = false) {
@@ -113,6 +119,104 @@
     home.focus();
   }
 
+  // --- Booking suggestion: preview card, saved only with "Bestätigen" ----------------------
+  function addProposal(p, historyEntry) {
+    const summary = `${p.amount_label} ${p.description || p.category}`.replace(/[[\]]/g, "");
+    const mark = (state) => {  // tells Wabi in the next request what became of the suggestion
+      historyEntry.content = historyEntry.content.replace(/\n\[Vorschlag[^\]]*\]$/, "") +
+        `\n[Vorschlag ${summary}: ${state}]`;
+    };
+    mark("offen, noch nicht gespeichert");
+
+    const card = document.createElement("div");
+    card.className = "wabi-card";
+    card.setAttribute("role", "group");
+    card.setAttribute("aria-label", "Buchungsvorschlag");
+    const title = document.createElement("div");
+    title.className = "wabi-card-title";
+    title.textContent = `Vorschlag: ${p.kind_label}`;
+    const rows = document.createElement("dl");
+    const fields = [["Datum", p.date_label], ["Betrag", p.amount_label], ["Beschreibung", p.description || "–"],
+                    ["Kategorie", p.category], [p.counter_account ? "Von Konto" : "Konto", p.account]];
+    if (p.counter_account) fields.push(["Auf Konto", p.counter_account]);
+    for (const [label, value] of fields) {
+      const dt = document.createElement("dt");
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      rows.append(dt, dd);
+    }
+    const status = document.createElement("p");
+    status.className = "wabi-card-status";
+    status.setAttribute("role", "status");
+    status.textContent = "Noch nicht gespeichert.";
+
+    const actions = document.createElement("div");
+    actions.className = "wabi-card-actions";
+    const confirm = document.createElement("button");
+    confirm.type = "button";
+    confirm.className = "wabi-card-confirm";
+    confirm.textContent = "Bestätigen";
+    const change = document.createElement("a");
+    change.className = "wabi-card-secondary";
+    change.textContent = "Ändern";
+    const params = new URLSearchParams({ datum: p.date, art: p.kind, betrag: p.amount, beschreibung: p.description,
+                                         kategorie: p.category_id, konto: p.account_id });
+    if (p.counter_account_id) params.set("gegenkonto", p.counter_account_id);
+    change.href = `${panel.dataset.newBookingUrl}?${params}`;
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "wabi-card-secondary";
+    cancel.textContent = "Abbrechen";
+    actions.append(confirm, change, cancel);
+
+    card.append(title, rows, status, actions);
+    log.append(card);
+    log.scrollTop = log.scrollHeight;
+
+    const finish = (state, text) => {
+      card.classList.add(`is-${state}`);
+      status.textContent = text;
+      actions.replaceChildren();
+    };
+
+    cancel.addEventListener("click", () => {
+      finish("cancelled", "Abgebrochen. Es wurde nichts gespeichert.");
+      mark("abgebrochen, nicht gespeichert");
+    });
+
+    confirm.addEventListener("click", async () => {
+      confirm.disabled = true;
+      cancel.disabled = true;
+      status.textContent = "Speichere …";
+      try {
+        const response = await fetch(panel.dataset.bookingUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": panel.dataset.csrf },
+          body: JSON.stringify({ amount: p.amount, category_id: p.category_id, account_id: p.account_id,
+                                 counter_account_id: p.counter_account_id, description: p.description,
+                                 date: p.date }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Speichern hat nicht geklappt.");
+        finish("saved", "✓ Gespeichert.");
+        mark("vom Nutzer gespeichert");
+        if (data.month_url && data.month_url.startsWith("/") && !data.month_url.startsWith("//")) {
+          const link = document.createElement("a");
+          link.className = "wabi-link";
+          link.href = data.month_url;
+          link.textContent = `Im ${data.month_label} ansehen →`;
+          actions.append(link);
+        }
+        wiggle(avatar);
+      } catch (error) {
+        status.textContent = error.message || "Speichern hat nicht geklappt.";
+        confirm.disabled = false;
+        cancel.disabled = false;
+      }
+    });
+  }
+
   async function ask(question) {
     question = question.trim();
     if (!question || busy) return;
@@ -131,6 +235,7 @@
     let reply = "Ich konnte gerade nicht antworten. Versuch es bitte noch einmal.";
     let failed = true;
     let links = [];
+    let proposal = null;
     try {
       const response = await fetch(panel.dataset.url, {
         method: "POST",
@@ -142,6 +247,7 @@
       else if (data.error) reply = data.error;
       failed = !response.ok || Boolean(data.error) || data.configured === false;
       links = data.links || [];
+      proposal = data.proposal || null;
     } catch {
       reply = "Ich erreiche die App gerade nicht. Bist du noch verbunden?";
     }
@@ -153,6 +259,7 @@
       // Wabi only sees text in the history, so note which link buttons were shown.
       const note = links.length ? `\n[Link-Knöpfe: ${links.map((link) => link.title).join(", ")}]` : "";
       history.push({ role: "assistant", content: reply + note });
+      if (proposal) addProposal(proposal, history[history.length - 1]);
     }
     wiggle(avatar);
     busy = false;
