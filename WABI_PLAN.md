@@ -81,11 +81,12 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
   5. Spracheingabe
   6. Feinschliff: Animationen, Smartphone-Ansicht, README-Abschnitt
 
-## Noch offen
+## Entschieden (16.11.2026)
 
-- Farbtöne und genaue Form der Biene beim ersten Entwurf gemeinsam festlegen.
-- Ob Wabi auch antworten soll, wenn man ihn per Sprache fragt (Sprachausgabe), oder nur per Text.
-- Ob der Chatverlauf gespeichert werden soll oder nach dem Schließen weg ist.
+- Farbe und Form: Königsblau (#1f4fd1 mit helleren und dunkleren Blautönen), futuristische
+  Roboterbiene – so wie der aktuelle Entwurf.
+- Keine Sprachausgabe: Wabi antwortet nur per Text, auch wenn man ihn per Sprache fragt.
+- Der Chatverlauf wird nicht gespeichert. Er lebt nur im Browser, solange die Seite offen ist.
 
 ## Stand der Umsetzung
 
@@ -105,5 +106,4 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
   Wackeln in der Wabe, wenn eine Antwort bei geschlossenem Fenster kommt, ruhige Flügel in der Wabe,
   Schutz vor Mehrfach-Tippen beim Flug, Fixkosten richtig aus dem Fixkosten-Haken, README-Abschnitt.
 
-Nicht umgesetzt (optional laut Plan): Anzeige der ungefähren Kosten in den Einstellungen. Die drei Punkte
-unter „Noch offen“ sind weiter deine Entscheidung.
+Nicht umgesetzt (optional laut Plan): Anzeige der ungefähren Kosten in den Einstellungen.
