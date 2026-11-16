@@ -13,14 +13,16 @@
   ("loans", "loans.index", "Kredite", "loan"),
   ("more", "overview.more", "Mehr", "more"),
 ] %}
+{% import "_wabi.html" as wabi with context %}
 <header class="band{% if band_short %} short{% endif %}">
-  <div class="appbar">
+  <div class="appbar{% if g.user %} has-wabi{% endif %}">
     <a class="brand" href="{{ url_for('overview.dashboard') }}">
       <img src="{{ static_url('icons/logo.svg') }}" alt="" width="34" height="34">
       <span>{{ app_name }}</span>
       {% if config.BETA %}<span class="beta-badge">Beta</span>{% endif %}
     </a>
     {% if g.user %}
+    {{ wabi.home_button() }}
     <nav class="topnav" aria-label="Hauptnavigation">
       {% for key, endpoint, label, _icon in nav_items %}
       <a href="{{ url_for(endpoint) }}"{% if active == key %} aria-current="page"{% endif %}>{{ label }}</a>
@@ -60,6 +62,8 @@
   <a class="tab" href="{{ url_for('overview.wealth') }}"{% if active == "wealth" %} aria-current="page"{% endif %}>{{ icon("wallet") }}<span>Vermögen</span></a>
   <a class="tab" href="{{ url_for('overview.more') }}"{% if active in ("more", "year", "loans") %} aria-current="page"{% endif %}>{{ icon("more") }}<span>Mehr</span></a>
 </nav>
+{{ wabi.panel() }}
+<script src="{{ static_url('wabi.js') }}" defer></script>
 {% endif %}
 </body>
 </html>

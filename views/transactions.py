@@ -113,6 +113,10 @@ def new():
             "kind": request.args.get("art", "expense"),
             "account_id": request.args.get("konto", type=int) or _default_account_id(choices["accounts"]),
             "category_id": request.args.get("kategorie", type=int) or "",
+            # Prefill from Wabi's suggestion ("Ändern"); the form checks everything on saving.
+            "amount": request.args.get("betrag", "")[:20],
+            "description": request.args.get("beschreibung", "")[:200],
+            "counter_account_id": request.args.get("gegenkonto", type=int) or "",
         }
     return render_template("transaction_form.html", values=values, errors=errors, transaction=None,
                            next_url=request.values.get("next", ""), **choices)

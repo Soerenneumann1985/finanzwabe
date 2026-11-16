@@ -1,0 +1,101 @@
+{# Wabi, the robot bee: drawing, home button in the band and the chat panel. #}
+
+{% macro bee(class_name="") %}
+<svg class="wabi-bee {{ class_name }}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <g class="wabi-wings">
+    <ellipse class="wabi-wing wabi-wing-back" cx="27" cy="20" rx="9" ry="14" transform="rotate(-25 27 20)"/>
+    <ellipse class="wabi-wing wabi-wing-front" cx="35" cy="19" rx="10" ry="15" transform="rotate(18 35 19)"/>
+  </g>
+  <path class="wabi-sting" d="M9 38 3 40l6 3z"/>
+  <ellipse class="wabi-body" cx="26" cy="39" rx="18" ry="13"/>
+  <g clip-path="url(#wabi-body-clip)">
+    <rect class="wabi-stripe" x="14" y="24" width="5" height="30"/>
+    <rect class="wabi-stripe" x="24" y="24" width="5" height="30"/>
+  </g>
+  <ellipse class="wabi-shine" cx="22" cy="32" rx="10" ry="3.2"/>
+  <path class="wabi-leg" d="M20 51v5M29 51.5v5"/>
+  <path class="wabi-antenna" d="M47 22c-1-5 0-8 2-11M52 23c2-5 5-7 8-8"/>
+  <circle class="wabi-light" cx="49" cy="10" r="2.6"/>
+  <circle class="wabi-light" cx="60" cy="15" r="2.6"/>
+  <circle class="wabi-head" cx="49" cy="34" r="12"/>
+  <rect class="wabi-visor" x="47" y="28" width="12" height="9" rx="4.5"/>
+  <circle class="wabi-eye" cx="54.5" cy="32.5" r="2"/>
+  <path class="wabi-smile" d="M51 41c2 1.6 4.4 1.6 6 0"/>
+</svg>
+{% endmacro %}
+
+{% macro home_button() %}
+<button class="wabi-home" id="wabi-home" type="button" aria-label="Wabi öffnen – dein Finanz-Assistent"
+        aria-controls="wabi-panel" aria-expanded="false" title="Frag Wabi">{{ bee() }}</button>
+{% endmacro %}
+
+{% macro panel() %}
+{# Shared paint for every bee on the page (gradients may only exist once). #}
+<svg class="wabi-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="wabi-metal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9db4ff"/>
+      <stop offset=".35" stop-color="#3a68f0"/>
+      <stop offset=".75" stop-color="#1f4fd1"/>
+      <stop offset="1" stop-color="#0b1d5e"/>
+    </linearGradient>
+    <linearGradient id="wabi-head-metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b9caff"/>
+      <stop offset=".45" stop-color="#4a74f5"/>
+      <stop offset="1" stop-color="#16328f"/>
+    </linearGradient>
+    <linearGradient id="wabi-visor-glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1d5e"/>
+      <stop offset="1" stop-color="#1a3fb0"/>
+    </linearGradient>
+    <clipPath id="wabi-body-clip"><ellipse cx="26" cy="39" rx="18" ry="13"/></clipPath>
+  </defs>
+</svg>
+
+<div class="wabi-flyer" id="wabi-flyer" aria-hidden="true">{{ bee() }}</div>
+
+<section class="wabi-panel" id="wabi-panel" role="dialog" aria-labelledby="wabi-title" hidden
+         data-url="{{ url_for('assistant.message') }}" data-csrf="{{ csrf_token() }}"
+         data-booking-url="{{ url_for('assistant.confirm_booking') }}"
+         data-new-booking-url="{{ url_for('transactions.new') }}"
+         data-configured="{{ '1' if wabi_configured else '0' }}">
+  <header class="wabi-head-bar">
+    <span class="wabi-avatar" id="wabi-avatar">{{ bee() }}</span>
+    <div class="wabi-heading">
+      <h2 id="wabi-title">Wabi</h2>
+      <span>Deine Finanz-Biene</span>
+    </div>
+    <button class="wabi-close" id="wabi-close" type="button" aria-label="Wabi schließen">{{ icon("close", 22) }}</button>
+  </header>
+
+  <div class="wabi-hint" id="wabi-hint" hidden>
+    {{ icon("info") }}
+    <div>
+      <p>Deine Fragen und die Zahlen, die Wabi dafür braucht, werden an <strong>Claude</strong> (Anthropic)
+        in der Cloud gesendet – nie die ganze Datenbank. Wabi wertet nur deine Daten aus und gibt keine
+        Anlage- oder Rechtsberatung.</p>
+      <p>Die Spracheingabe (Mikrofon) nutzt die Spracherkennung deines Browsers; Chrome schickt die
+        Aufnahme dafür an Google. Tippen geht immer auch.</p>
+      <button class="btn small" id="wabi-hint-ok" type="button">Verstanden</button>
+    </div>
+  </div>
+
+  <div class="wabi-log" id="wabi-log" role="log" aria-live="polite" aria-label="Unterhaltung mit Wabi"></div>
+
+  <div class="wabi-suggestions" id="wabi-suggestions">
+    <button type="button" class="wabi-chip">Was habe ich diesen Monat ausgegeben?</button>
+    <button type="button" class="wabi-chip">Wie hoch sind meine Kredite noch?</button>
+    <button type="button" class="wabi-chip">Was sind meine Fixkosten?</button>
+    <button type="button" class="wabi-chip">Wo trage ich einen Dauerauftrag ein?</button>
+  </div>
+
+  <form class="wabi-form" id="wabi-form" autocomplete="off">
+    <label class="visually-hidden" for="wabi-input">Deine Frage an Wabi</label>
+    <textarea id="wabi-input" rows="1" maxlength="1000" placeholder="Frag Wabi …" enterkeyhint="send"></textarea>
+    {# Shown by wabi.js only if the browser offers speech recognition on a secure page (HTTPS/localhost). #}
+    <button class="wabi-mic" id="wabi-mic" type="button" aria-label="Spracheingabe starten" aria-pressed="false"
+            title="Spracheingabe" hidden>{{ icon("mic", 22) }}</button>
+    <button class="wabi-send" type="submit" aria-label="Senden">{{ icon("send", 22) }}</button>
+  </form>
+</section>
+{% endmacro %}
