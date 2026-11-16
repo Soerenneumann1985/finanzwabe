@@ -100,4 +100,10 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
   automatisch gesendet, Buchungen brauchen weiter „Bestätigen“). Nur auf sicheren Seiten (HTTPS oder
   localhost) – im Heim-WLAN über http://192.168… blendet die App den Knopf aus. Chrome schickt die
   Aufnahme zur Erkennung an Google; der Hinweis im Chatfenster sagt das.
-- [ ] Schritt 6
+- [x] Schritt 6: Feinschliff – Eingabefeld bleibt über der Handy-Tastatur, Seite dahinter scrollt nicht mit,
+  keine aufspringende Tastatur nach jeder Antwort, Warte-Hinweis nach 4 s, Zeitlimit für Anfragen,
+  Wackeln in der Wabe, wenn eine Antwort bei geschlossenem Fenster kommt, ruhige Flügel in der Wabe,
+  Schutz vor Mehrfach-Tippen beim Flug, Fixkosten richtig aus dem Fixkosten-Haken, README-Abschnitt.
+
+Nicht umgesetzt (optional laut Plan): Anzeige der ungefähren Kosten in den Einstellungen. Die drei Punkte
+unter „Noch offen“ sind weiter deine Entscheidung.

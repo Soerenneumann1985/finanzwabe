@@ -126,6 +126,8 @@ def test_expenses_whole_month_with_fixed_costs(app, anna):
     assert result["davon_fixkosten"] == "800,00 €"
     assert result["saldo"] == "1.637,51 €"
     assert list(result["ausgaben_nach_kategorie"]) == ["Miete", "Supermarkt"]
+    # Fixed costs come from the category checkbox, not from standing orders (Miete has none here)
+    assert result["fixkosten_nach_kategorie"] == {"Miete": "800,00 €"}
 
 
 def test_expenses_rejects_bad_input(app, anna):

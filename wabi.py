@@ -83,7 +83,8 @@ def make_client(api_key: str):
     """The Anthropic client. Tests replace this function with a fake."""
     import anthropic
 
-    return anthropic.Anthropic(api_key=api_key, max_retries=2, timeout=60.0)
+    # At most ~90 s per request, so the chat in the browser (100 s limit) never waits for nothing.
+    return anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=45.0)
 
 
 # --- Helpers for compact tool results ----------------------------------------------
@@ -146,7 +147,9 @@ def tool_expenses(user_id: int, data: dict, today: dt.date) -> dict:
         transactions = [t for t in transactions if t.account_id == account.id]
     bookings = [calc.Booking(t.amount_cents, t.category.kind, t.category_id, t.category.is_fixed, t.date)
                 for t in transactions]
-    names = {c.id: c.name for c in services.categories_of(user_id)}
+    all_categories = services.categories_of(user_id)
+    names = {c.id: c.name for c in all_categories}
+    fixed_ids = {c.id for c in all_categories if c.is_fixed}
     by_category = calc.totals_by_category(bookings, calc.EXPENSE)
     income_by_category = calc.totals_by_category(bookings, calc.INCOME)
 
@@ -169,6 +172,10 @@ def tool_expenses(user_id: int, data: dict, today: dt.date) -> dict:
         result["ausgaben_nach_kategorie"] = {
             names.get(cid, "?"): euro(total)
             for cid, total in sorted(by_category.items(), key=lambda item: -item[1])
+        }
+        result["fixkosten_nach_kategorie"] = {
+            names[cid]: euro(total)
+            for cid, total in sorted(by_category.items(), key=lambda item: -item[1]) if cid in fixed_ids
         }
         result["einnahmen_nach_kategorie"] = {
             names.get(cid, "?"): euro(total)
@@ -505,9 +512,10 @@ PERIOD = {
 TOOLS: dict[str, Tool] = {
     "ausgaben_abfragen": Tool(
         tool_expenses,
-        "Summen für einen Zeitraum: Einnahmen, Ausgaben, Fixkosten, Saldo und Ausgaben je Kategorie. "
-        "Optional nur eine Kategorie oder ein Konto. Für Fragen wie 'Wie viel habe ich im Oktober für "
-        "Supermarkt ausgegeben?'.",
+        "Summen für einen Zeitraum: Einnahmen, Ausgaben, Fixkosten (Ausgaben in Kategorien mit "
+        "Fixkosten-Haken, auch je Kategorie), Saldo und Ausgaben je Kategorie. Optional nur eine Kategorie "
+        "oder ein Konto. Für Fragen wie 'Wie viel habe ich im Oktober für Supermarkt ausgegeben?' und "
+        "'Was sind meine Fixkosten?' (dann einen ganzen Monat abfragen).",
         {**PERIOD,
          "kategorie": {"type": "string", "description": "Name der Kategorie, z. B. Supermarkt"},
          "konto": {"type": "string", "description": "Name des Kontos"}},
@@ -531,8 +539,9 @@ TOOLS: dict[str, Tool] = {
     ),
     "dauerauftraege_abfragen": Tool(
         tool_standing_orders,
-        "Aktive Daueraufträge (Miete, Gehalt, Abos, Kreditraten) mit Summen pro Monat und die "
-        "Kategorien mit Fixkosten-Haken. Für Fragen nach festen monatlichen Kosten."),
+        "Aktive Daueraufträge (Miete, Gehalt, Abos, Kreditraten) mit Summen pro Monat. Für Fragen nach "
+        "Daueraufträgen. Für Fixkosten stattdessen ausgaben_abfragen nutzen: Fixkosten sind alle Ausgaben "
+        "in Kategorien mit Fixkosten-Haken, nicht nur Daueraufträge."),
     "app_bereich_erklaeren": Tool(
         tool_explain,
         "Erklärt, was ein Bereich der App zeigt und wo man ihn findet. Ohne 'bereich' kommen alle Bereiche. "

@@ -116,18 +116,54 @@ Finanzwabe immer nur auf **einem** PC gleichzeitig laufen lassen und mit Strg+C 
 `in_benutzung.txt` im OneDrive-Ordner warnt, falls die App auf einem anderen PC noch offen ist.
 Ein anderer Ordner lässt sich mit `FINANZ_DATA_DIR` festlegen.
 
-## Wabi, der KI-Assistent (Prototyp)
+## Wabi, der KI-Assistent
 
-Die kleine Roboterbiene neben dem Logo beantwortet Fragen zu deinen eigenen Finanzen, z. B. „Wie viel habe
-ich im Oktober für Supermarkt ausgegeben?“ oder „Wie hoch ist mein Sofortkredit noch?“. Wabi nutzt die
-Claude-API von Anthropic mit Werkzeugen, die nur lesen dürfen; an Claude gehen nur die Zahlen, die für die
-Frage nötig sind. Plan und Stand: [WABI_PLAN.md](WABI_PLAN.md).
+Die kleine Roboterbiene neben dem Logo ist dein Finanz-Assistent. Antippen – Wabi fliegt nach unten rechts
+und öffnet das Chatfenster. Plan und Stand der Umsetzung: [WABI_PLAN.md](WABI_PLAN.md).
 
-Einrichten: In der [Claude Console](https://console.anthropic.com) einen API-Schlüssel anlegen und Guthaben
-aufladen. Den Schlüssel als Datei **`anthropic_api_key`** (oder `anthropic_api_key.txt`) in den
-OneDrive-Ordner `Finanzwabe` neben `finanz.db` legen, alternativ in die Umgebungsvariable
-`ANTHROPIC_API_KEY`. Ohne Schlüssel bleibt Wabi sichtbar und erklärt, dass er noch eingerichtet werden muss.
-Das Modell steht in `wabi.py` (`MODEL`).
+| Was Wabi kann | Beispiel |
+| --- | --- |
+| Fragen zu deinen Finanzen beantworten | „Wie viel habe ich im Oktober für Supermarkt ausgegeben?“, „Wann bin ich schuldenfrei?“ |
+| Durch die App führen, mit Link-Knopf | „Wo trage ich einen Dauerauftrag ein?“, „Zeig mir den Oktober“ |
+| Buchungen vorschlagen | „Trag 23,50 € Tankstelle von heute ein.“ → Vorschau-Karte mit **Bestätigen**, **Ändern**, **Abbrechen** |
+| Spracheingabe | Mikrofon-Knopf antippen und die Frage sprechen |
+
+**Sicherheit:** Wabi bekommt keinen Zugriff auf die Datenbank, sondern nur einige Werkzeuge in `wabi.py`, die
+über `services.py` ausschließlich die Daten des angemeldeten Nutzers lesen. Gespeichert wird eine Buchung erst,
+wenn du auf der Karte „Bestätigen“ tippst; der Server prüft sie dann noch einmal mit den Regeln des
+Buchungsformulars. Wabi kann nichts löschen, keine Buchungen ändern und keine Einstellungen ändern.
+
+**Datenschutz:** Deine Frage und die Zahlen, die für die Antwort nötig sind, gehen an Claude (Anthropic) in der
+Cloud – nie die ganze Datenbank. Der Chatverlauf liegt nur im Browser und ist nach dem Verlassen der Seite weg.
+Die Spracheingabe nutzt die Spracherkennung des Browsers; Chrome schickt die Aufnahme dafür an Google.
+Beides steht beim ersten Öffnen im Chatfenster.
+
+### Einrichten
+
+1. In der [Claude Console](https://console.anthropic.com) einen API-Schlüssel anlegen und Guthaben aufladen
+   (Abrechnung über das Guthaben, nicht über ein Claude-Abo).
+2. Den Schlüssel als Datei **`anthropic_api_key.txt`** (oder `anthropic_api_key`) in den OneDrive-Ordner
+   `Finanzwabe` neben `finanz.db` legen. Dann funktioniert Wabi auf allen PCs. Alternativ: Umgebungsvariable
+   `ANTHROPIC_API_KEY` oder die Datei in `instance\`.
+3. Finanzwabe neu starten.
+
+Ohne Schlüssel bleibt Wabi sichtbar und erklärt freundlich, dass er noch eingerichtet werden muss; die App
+funktioniert normal weiter. Der Schlüssel wird nie angezeigt, protokolliert oder ins Repository geschrieben
+(`.gitignore` schließt Schlüsseldateien aus).
+
+### Kosten und Modell
+
+Wabi nutzt das günstige Modell `claude-haiku-5-5` (Konstante `MODEL` in `wabi.py`, dort auch `EFFORT`).
+Eine Frage kostet meist weniger als einen Zehntelcent. Kosten halten klein: kurze Systemanweisung, kompakte
+Werkzeug-Antworten, höchstens 12 Nachrichten Verlauf pro Anfrage, Nachrichten auf 1.000 Zeichen gekürzt.
+
+### Grenzen
+
+- **Spracheingabe nur auf sicheren Seiten:** Browser erlauben das Mikrofon nur mit HTTPS oder auf
+  `localhost`. Am PC (`http://localhost:8000`) geht es, auf dem Handy im Heim-WLAN (`http://192.168…`) blendet
+  die App den Knopf aus – dort erst mit HTTPS (siehe *Variante B*).
+- Antworten mit Auswertungen dauern meist 3 bis 15 Sekunden.
+- Wabi antwortet nur per Text, nicht per Sprache.
 
 ## Einstellungen über Umgebungsvariablen
 
@@ -151,9 +187,9 @@ Das Modell steht in `wabi.py` (`MODEL`).
 .venv\Scripts\python -m pytest
 ```
 
-Über 100 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
+Über 200 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
 ganze Web-App (Login, alle Seiten, Buchungen, Umbuchungen, Daueraufträge, Datentrennung zwischen Nutzern,
-Schutz vor gefälschten Formularen).
+Schutz vor gefälschten Formularen) sowie Wabi mit nachgebildeter Claude-API (`tests/test_wabi.py`).
 
 ## Projektstruktur
 
@@ -163,6 +199,7 @@ finanz-app/
 ├── models.py           # Tabellen (SQLAlchemy): user, account, category, transaction, recurring, loan, net_worth_snapshot
 ├── calculations.py     # ALLE Rechenregeln als reine Funktionen (ohne Datenbank, ohne Web)
 ├── services.py         # Datenbankabfragen pro Nutzer, reicht Werte an calculations.py weiter
+├── wabi.py             # Wabi: API-Schlüssel, Werkzeuge und Gespräch mit Claude (Endpunkt: views/assistant.py)
 ├── money.py            # Beträge lesen ("1.234,56") und anzeigen
 ├── charts.py           # Positionen für die Diagramme (reines Layout)
 ├── icons.py            # Symbole als SVG

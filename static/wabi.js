@@ -16,10 +16,24 @@
   const sendButton = form.querySelector("button[type='submit']");
   const configured = panel.dataset.configured === "1";
   const HINT_KEY = "wabi-hinweis-gelesen";
+  const REQUEST_TIMEOUT_MS = 100000;  // the server gives up earlier (wabi.py: 45 s, 1 retry)
   const history = [];  // only in memory: gone when the page is left
   let busy = false;
+  let moving = false;  // the bee is flying: ignore further taps until it has landed
 
   const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // On phones the keyboard would pop up after every answer, so only focus with a mouse.
+  const focusInput = () => { if (!window.matchMedia("(pointer: coarse)").matches) input.focus(); };
+
+  // Chrome on Android lays the keyboard over fixed elements. Keep the input above it.
+  if (window.visualViewport) {
+    const followKeyboard = () => {
+      const covered = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+      panel.style.setProperty("--wabi-keyboard", `${Math.max(0, Math.round(covered))}px`);
+    };
+    window.visualViewport.addEventListener("resize", followKeyboard);
+    window.visualViewport.addEventListener("scroll", followKeyboard);
+  }
 
   function storageGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
   function storageSet(key, value) { try { localStorage.setItem(key, value); } catch { /* ignore */ } }
@@ -89,8 +103,10 @@
   }
 
   async function open() {
-    if (!panel.hidden) return;
+    if (!panel.hidden || moving) return;
+    moving = true;
     home.setAttribute("aria-expanded", "true");
+    document.documentElement.classList.add("wabi-open");  // stops the page behind from scrolling (phone)
     panel.hidden = false;
     panel.classList.add("is-measuring");
     avatar.classList.add("is-hidden");
@@ -102,13 +118,16 @@
     avatar.classList.remove("is-hidden");
     hint.hidden = storageGet(HINT_KEY) === "1";
     greet();
-    input.focus();
+    moving = false;
+    focusInput();
   }
 
   async function close() {
-    if (panel.hidden) return;
+    if (panel.hidden || moving) return;
+    moving = true;
     stopListening();
     home.setAttribute("aria-expanded", "false");
+    document.documentElement.classList.remove("wabi-open");
     avatar.classList.add("is-hidden");
     const start = avatar;
     panel.classList.add("is-measuring");
@@ -117,6 +136,7 @@
     panel.classList.remove("is-measuring");
     avatar.classList.remove("is-hidden");
     home.classList.remove("is-away");
+    moving = false;
     home.focus();
   }
 
@@ -232,6 +252,16 @@
     typing.innerHTML = "<i></i><i></i><i></i>";
     log.append(typing);
     log.scrollTop = log.scrollHeight;
+    // Answers with tools take a few seconds: say what is going on instead of only dots.
+    const patience = setTimeout(() => {
+      const note = document.createElement("span");
+      note.className = "wabi-typing-note";
+      note.textContent = "Ich schaue in deinen Zahlen nach …";
+      typing.append(note);
+      log.scrollTop = log.scrollHeight;
+    }, 4000);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     let reply = "Ich konnte gerade nicht antworten. Versuch es bitte noch einmal.";
     let failed = true;
@@ -242,6 +272,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": panel.dataset.csrf },
         body: JSON.stringify({ messages: history.slice(-12) }),
+        signal: controller.signal,
       });
       const data = await response.json();
       if (data.reply) reply = data.reply;
@@ -249,9 +280,13 @@
       failed = !response.ok || Boolean(data.error) || data.configured === false;
       links = data.links || [];
       proposal = data.proposal || null;
-    } catch {
-      reply = "Ich erreiche die App gerade nicht. Bist du noch verbunden?";
+    } catch (error) {
+      reply = error.name === "AbortError"
+        ? "Das hat zu lange gedauert. Versuch es bitte gleich noch einmal."
+        : "Ich erreiche die App gerade nicht. Bist du noch verbunden?";
     }
+    clearTimeout(patience);
+    clearTimeout(timer);
     typing.remove();
     addMessage(reply, "wabi", failed && reply !== "" && !reply.startsWith("Ich bin noch nicht"));
     if (!failed) addLinks(links);
@@ -262,10 +297,10 @@
       history.push({ role: "assistant", content: reply + note });
       if (proposal) addProposal(proposal, history[history.length - 1]);
     }
-    wiggle(avatar);
+    wiggle(panel.hidden ? home : avatar);  // closed meanwhile? Then the bee in the hive says "news!"
     busy = false;
     sendButton.disabled = false;
-    input.focus();
+    if (!panel.hidden) focusInput();
   }
 
   home.addEventListener("click", () => (panel.hidden ? open() : close()));
@@ -273,7 +308,7 @@
   document.getElementById("wabi-hint-ok").addEventListener("click", () => {
     storageSet(HINT_KEY, "1");
     hint.hidden = true;
-    input.focus();
+    focusInput();
   });
   panel.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
 
