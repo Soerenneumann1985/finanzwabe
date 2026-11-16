@@ -194,7 +194,8 @@ def tool_balances(user_id: int, data: dict, today: dt.date) -> dict:
 
 def tool_loans(user_id: int, data: dict, today: dt.date) -> dict:
     """Remaining debt, rate and payoff forecast of every loan."""
-    statuses = services.loan_statuses(user_id, today)
+    wealth = services.wealth_overview(user_id, today)  # also knows the date for all loans together
+    statuses = wealth.loans
     if not statuses:
         return {"kredite": [], "hinweis": "Keine Kredite angelegt."}
     loans = []
@@ -217,7 +218,14 @@ def tool_loans(user_id: int, data: dict, today: dt.date) -> dict:
             if status.plan is not None:
                 entry["zinsen_bis_ende"] = euro(status.plan.total_interest)
         loans.append(entry)
-    return {"kredite": loans, "restschuld_gesamt": euro(sum(s.remaining for s in statuses))}
+    if not wealth.open_loans:
+        all_free = "schon schuldenfrei (alle Kredite abbezahlt)"
+    elif wealth.debt_free_date:
+        all_free = f"{wealth.debt_free_date:%d.%m.%Y}"
+    else:
+        all_free = "nicht absehbar (mindestens eine Rate deckt die Zinsen nicht)"
+    return {"kredite": loans, "restschuld_gesamt": euro(wealth.loan_debt),
+            "alle_kredite_schuldenfrei_am": all_free}
 
 
 def tool_search(user_id: int, data: dict, today: dt.date) -> dict:
@@ -309,7 +317,9 @@ TOOLS: dict[str, Tool] = {
     "kontostaende_abfragen": Tool(
         tool_balances, "Aktuelle Kontostände aller Konten, Guthaben, Schulden und Nettovermögen."),
     "kredite_abfragen": Tool(
-        tool_loans, "Alle Kredite mit Restschuld, Rate, Zinssatz und Datum 'schuldenfrei am'."),
+        tool_loans,
+        "Alle Kredite mit Restschuld, Rate, Zinssatz und Datum 'schuldenfrei am' je Kredit, dazu das Datum, "
+        "an dem alle Kredite zusammen abbezahlt sind (Antwort auf 'Wann bin ich schuldenfrei?')."),
     "buchungen_suchen": Tool(
         tool_search,
         "Einzelne Buchungen finden: nach Text (Beschreibung oder Kategorie), Betrag und/oder Zeitraum. "
@@ -362,6 +372,7 @@ keine Übertreibungen.
 "- " am Zeilenanfang sind erlaubt.
 - Beträge immer im deutschen Format, z. B. 1.234,56 €.
 - Hole Zahlen immer mit den Werkzeugen. Erfinde nie Zahlen. Wenn ein Werkzeug nichts findet, sag das.
+- Enthält eine Nachricht mehrere Fragen, beantworte jede davon.
 - Kennst du den genauen Namen einer Kategorie oder eines Kontos nicht, nutze kategorien_auflisten.
 - Ein Monat ohne Jahr meint den letzten solchen Monat bis heute.
 - Du gibst keine Anlage-, Steuer- oder Rechtsberatung, sondern wertest nur die Daten der App aus.

@@ -149,6 +149,28 @@ def test_loans(app, anna):
     assert loan["monatsrate"] == "250,00 €"
     assert "schuldenfrei_am" in loan
     assert result["restschuld_gesamt"] == loan["restschuld"]
+    assert result["alle_kredite_schuldenfrei_am"] == loan["schuldenfrei_am"]
+
+
+def test_debt_free_date_is_the_last_loan(app, anna):
+    with app.app_context():
+        db.add(Loan(user_id=anna, name="Bafög", start_amount_cents=500_000, monthly_rate_cents=10_000,
+                    start_date=dt.date(2026, 1, 1), interest_rate_bp=0))
+        db.commit()
+    result, _ = call(app, anna, "kredite_abfragen", {})
+    dates = {loan["kredit"]: loan["schuldenfrei_am"] for loan in result["kredite"]}
+    # Sofortkredit: 40 rates until 01.04.2029; Bafög: 50 rates until 01.02.2030
+    assert dates == {"Sofortkredit": "01.04.2029", "Bafög": "01.02.2030"}
+    assert result["alle_kredite_schuldenfrei_am"] == "01.02.2030"
+    assert result["restschuld_gesamt"] == "11.150,00 €"  # 11 rates paid: 7.250 € + 3.900 €
+
+
+def test_no_loans(app, client):
+    register(client, "carl@example.com")
+    with app.app_context():
+        user_id = services.find_user("carl@example.com").id
+    result, _ = call(app, user_id, "kredite_abfragen", {})
+    assert result == {"kredite": [], "hinweis": "Keine Kredite angelegt."}
 
 
 def test_search_by_text_amount_and_period(app, anna):
