@@ -184,12 +184,93 @@ def test_search_by_text_amount_and_period(app, anna):
     assert error and "Suchtext" in message
 
 
+def test_search_keeps_income_and_expenses_apart(app, anna):
+    result, _ = call(app, anna, "buchungen_suchen", {"von": "2026-10-01", "bis": "2026-10-31"})
+    assert result["treffer"] == 4
+    assert result["summe_ausgaben"] == "862,49 €"
+    assert result["summe_einnahmen"] == "2.500,00 €"
+    assert result["summe_umbuchungen"] == "0,00 €"
+
+
+def test_link_note_never_reaches_the_user(app, anna):
+    fake = FakeClient(response([text_block("Schau dort nach.\n[Link-Knöpfe: Monat]")]))
+    with app.app_context():
+        reply = wabi.chat(fake, anna, [{"role": "user", "content": "Wo?"}], TODAY)
+    assert reply.text == "Schau dort nach."
+
+
 def test_standing_orders_and_categories(app, anna):
     result, _ = call(app, anna, "dauerauftraege_abfragen", {})
     assert "Miete" in result["fixkosten_kategorien"]
     result, _ = call(app, anna, "kategorien_auflisten", {})
     assert "Girokonto" in result["konten"]
     assert any(c["name"] == "Supermarkt" for c in result["kategorien"])
+
+
+# --- App guide and navigation ---------------------------------------------------------------
+
+def test_every_section_path_exists(app, client, anna):
+    for key, section in wabi.SECTIONS.items():
+        response = client.get(section.path)
+        assert response.status_code in (200, 302), f"{key}: {section.path} -> {response.status_code}"
+        if response.status_code == 302:  # /monat and /jahr redirect to the current period
+            assert "/anmelden" not in response.headers["Location"]
+
+
+def test_explain_one_section_and_all(app, anna):
+    result, error = call(app, anna, "app_bereich_erklaeren", {"bereich": "dauerauftraege"})
+    assert not error
+    [section] = result["bereiche"]
+    assert section["bereich"] == "Daueraufträge" and "Mehr" in section["wo"]
+    result, _ = call(app, anna, "app_bereich_erklaeren", {})
+    assert len(result["bereiche"]) == len(wabi.SECTIONS)
+
+
+def test_navigate_to_section(app, anna):
+    result, error = call(app, anna, "zu_bereich_navigieren", {"bereich": "Vermögen"})
+    assert not error
+    assert result["link"] == "/vermoegen" and result["titel"] == "Vermögen"
+
+
+def test_navigate_to_month_and_year(app, anna):
+    result, _ = call(app, anna, "zu_bereich_navigieren", {"bereich": "monat", "jahr": 2026, "monat": 10})
+    assert result == result | {"link": "/monat/2026/10", "titel": "Oktober 2026"}
+    result, _ = call(app, anna, "zu_bereich_navigieren", {"bereich": "monat", "monat": 3})
+    assert result["link"] == "/monat/2026/3"  # year defaults to the current one
+    result, _ = call(app, anna, "zu_bereich_navigieren", {"bereich": "jahr", "jahr": 2025})
+    assert result["link"] == "/jahr/2025"
+
+
+def test_navigate_rejects_unknown_or_bad_input(app, anna):
+    message, error = call(app, anna, "zu_bereich_navigieren", {"bereich": "https://boese.example"})
+    assert error and "gibt es nicht" in message
+    message, error = call(app, anna, "zu_bereich_navigieren", {"bereich": "monat", "monat": 13})
+    assert error and "Ungültig" in message
+    message, error = call(app, anna, "zu_bereich_navigieren", {})
+    assert error
+
+
+def test_chat_collects_navigation_links(app, anna):
+    fake = FakeClient(
+        response([tool_block("zu_bereich_navigieren", {"bereich": "dauerauftraege"}),
+                  tool_block("zu_bereich_navigieren", {"bereich": "dauerauftraege"}, "tool_2")],
+                 stop_reason="tool_use"),
+        response([text_block("Daueraufträge findest du unter Mehr.")]),
+    )
+    with app.app_context():
+        reply = wabi.chat(fake, anna, [{"role": "user", "content": "Wo sind Daueraufträge?"}], TODAY)
+    assert reply.links == [{"title": "Daueraufträge", "url": "/dauerauftraege"}]  # no duplicates
+
+
+def test_endpoint_returns_links(client, anna, monkeypatch):
+    fake = FakeClient(
+        response([tool_block("zu_bereich_navigieren", {"bereich": "einstellungen"})], stop_reason="tool_use"),
+        response([text_block("Dein Passwort änderst du in den Einstellungen.")]),
+    )
+    monkeypatch.setattr(wabi, "load_api_key", lambda folders=None: "sk-ant-test")
+    monkeypatch.setattr(wabi, "make_client", lambda key: fake)
+    data = post(client, [{"role": "user", "content": "Wo ändere ich mein Passwort?"}]).get_json()
+    assert data["links"] == [{"title": "Einstellungen", "url": "/einstellungen"}]
 
 
 def test_unknown_tool(app, anna):

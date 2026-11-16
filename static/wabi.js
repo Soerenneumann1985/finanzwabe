@@ -56,6 +56,24 @@
     return bubble;
   }
 
+  // Link buttons from Wabi: only addresses inside this app are allowed.
+  function addLinks(links) {
+    const safe = (links || []).filter((link) =>
+      typeof link.url === "string" && link.url.startsWith("/") && !link.url.startsWith("//") && !link.url.includes("\\"));
+    if (!safe.length) return;
+    const row = document.createElement("div");
+    row.className = "wabi-links";
+    for (const link of safe) {
+      const a = document.createElement("a");
+      a.className = "wabi-link";
+      a.href = link.url;
+      a.textContent = `Zu ${link.title} →`;
+      row.append(a);
+    }
+    log.append(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
   function greet() {
     if (log.childElementCount) return;
     addMessage(configured
@@ -112,6 +130,7 @@
 
     let reply = "Ich konnte gerade nicht antworten. Versuch es bitte noch einmal.";
     let failed = true;
+    let links = [];
     try {
       const response = await fetch(panel.dataset.url, {
         method: "POST",
@@ -122,13 +141,19 @@
       if (data.reply) reply = data.reply;
       else if (data.error) reply = data.error;
       failed = !response.ok || Boolean(data.error) || data.configured === false;
+      links = data.links || [];
     } catch {
       reply = "Ich erreiche die App gerade nicht. Bist du noch verbunden?";
     }
     typing.remove();
     addMessage(reply, "wabi", failed && reply !== "" && !reply.startsWith("Ich bin noch nicht"));
+    if (!failed) addLinks(links);
     if (failed) history.pop();  // keep only real question/answer pairs
-    else history.push({ role: "assistant", content: reply });
+    else {
+      // Wabi only sees text in the history, so note which link buttons were shown.
+      const note = links.length ? `\n[Link-Knöpfe: ${links.map((link) => link.title).join(", ")}]` : "";
+      history.push({ role: "assistant", content: reply + note });
+    }
     wiggle(avatar);
     busy = false;
     sendButton.disabled = false;

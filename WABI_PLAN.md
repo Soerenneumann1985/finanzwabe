@@ -91,4 +91,6 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
 
 - [x] Schritt 1: Wabi-Figur und Chatfenster (Prototyp)
 - [x] Schritt 2: API-Anbindung und Fragen beantworten (Prototyp)
-- [ ] Schritt 3–6
+- [x] Schritt 3: App-Führung und Navigation (Werkzeuge `app_bereich_erklaeren` und
+  `zu_bereich_navigieren`, Link-Knöpfe unter Wabis Antwort; Wabi öffnet nie selbst eine Seite)
+- [ ] Schritt 4–6

@@ -13,6 +13,7 @@ import datetime as dt
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -39,6 +40,8 @@ NOT_CONFIGURED = (
     "Ich bin noch nicht eingerichtet. Lege deinen API-Schlüssel aus der Claude Console als Datei "
     "„anthropic_api_key“ in den Finanzwabe-Ordner in OneDrive (neben finanz.db) und starte die App neu."
 )
+
+LINK_NOTE = re.compile(r"\n?\[Link-Knöpfe:[^\]]*\]")
 
 MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
           "August", "September", "Oktober", "November", "Dezember"]
@@ -249,6 +252,8 @@ def tool_search(user_id: int, data: dict, today: dt.date) -> dict:
         found = services.transactions_between(user_id, start, end)
 
     shown = found[:MAX_SEARCH_RESULTS]
+    bookings = [calc.Booking(t.amount_cents, t.category.kind) for t in found]  # all with category_id 0
+    transfers = calc.totals_by_category(bookings, calc.TRANSFER).get(0, 0)
     return {
         "treffer": len(found),
         "buchungen": [
@@ -256,7 +261,10 @@ def tool_search(user_id: int, data: dict, today: dt.date) -> dict:
              "kategorie": t.category.name, "konto": t.account.name}
             for t in shown
         ],
-        "summe_treffer": euro(sum(t.amount_cents for t in found)),
+        # Separate sums: adding income, expenses and transfers together would mislead.
+        "summe_ausgaben": euro(calc.expense_total(bookings)),
+        "summe_einnahmen": euro(calc.income_total(bookings)),
+        "summe_umbuchungen": euro(transfers),
         **({"hinweis": f"Nur die {MAX_SEARCH_RESULTS} neuesten Treffer gezeigt."}
            if len(found) > MAX_SEARCH_RESULTS else {}),
     }
@@ -288,6 +296,108 @@ def tool_categories(user_id: int, data: dict, today: dt.date) -> dict:
         ],
         "konten": [a.name for a in services.accounts_of(user_id)],
     }
+
+
+# --- App guide -------------------------------------------------------------------------
+# key: (title, path, where to find it, what it shows). The paths are fixed addresses of the app;
+# tests/test_wabi.py checks that every one of them exists.
+
+@dataclass(frozen=True)
+class Section:
+    title: str
+    path: str
+    where: str
+    explanation: str
+
+
+SECTIONS: dict[str, Section] = {
+    "uebersicht": Section(
+        "Übersicht", "/", "Reiter „Übersicht“ (Haus-Symbol)",
+        "Startseite: Nettovermögen, Einnahmen, Ausgaben, Saldo und Sparquote des Monats, Budget-Warnungen, "
+        "Diagramm der letzten 6 Monate, letzte Buchungen, Kredite und Konten auf einen Blick."),
+    "monat": Section(
+        "Monat", "/monat", "Reiter „Monat“ (Kalender-Symbol)",
+        "Alle Buchungen eines Monats nach Tagen, Summen je Kategorie mit Budgets, Fixkosten, Einnahmen und "
+        "Umbuchungen. Mit den Pfeilen wechselst du den Monat, ein Klick auf eine Kategorie filtert die Buchungen."),
+    "jahr": Section(
+        "Jahr", "/jahr", "Reiter „Jahr“ oder „Mehr“ → Jahresübersicht",
+        "12-Monats-Diagramm, Tabelle aller Monate, Ausgaben je Kategorie mit Monatsdurchschnitt und Vergleich "
+        "zum Vorjahr."),
+    "vermoegen": Section(
+        "Vermögen", "/vermoegen", "Reiter „Vermögen“ (Geldbörsen-Symbol)",
+        "Alle Konten mit Kontostand, Kreditkarten mit freiem Rahmen, Kredite, Nettovermögen und dessen Verlauf."),
+    "kredite": Section(
+        "Kredite", "/kredite", "Reiter „Kredite“ oder „Mehr“ → Kredite",
+        "Je Kredit Restschuld, Fortschritt, nächste Rate, Zinsen und die Prognose „schuldenfrei am …“. "
+        "Dort legst du auch neue Kredite an."),
+    "dauerauftraege": Section(
+        "Daueraufträge", "/dauerauftraege", "„Mehr“ → Daueraufträge",
+        "Miete, Gehalt, Abos und Kreditraten, die sich jeden Monat selbst buchen. Anlegen, ändern und pausieren."),
+    "konten": Section(
+        "Konten", "/konten", "„Mehr“ → Konten",
+        "Girokonto, Sparkonto, Depot, Bargeld und Kreditkarten anlegen und den aktuellen Kontostand eintragen."),
+    "kategorien": Section(
+        "Kategorien", "/kategorien", "„Mehr“ → Kategorien",
+        "Kategorien für Ausgaben, Einnahmen und Umbuchungen. Hier setzt du den Fixkosten-Haken und ein "
+        "Monatsbudget (Warnung ab 80 %)."),
+    "suche": Section(
+        "Suche", "/suche", "Lupe oben rechts oder „Mehr“ → Suche",
+        "Alle Buchungen nach Text, Kategorie oder Betrag durchsuchen."),
+    "buchung": Section(
+        "Neue Buchung", "/buchungen/neu", "Sechseckiger „+“-Knopf unten (am PC: „+ Buchung“ oben rechts)",
+        "Ausgabe, Einnahme oder Umbuchung zwischen eigenen Konten eintragen. Die App schlägt Kategorien aus "
+        "früheren Buchungen vor."),
+    "bank_import": Section(
+        "Bank-Import", "/import/bank", "„Mehr“ → Bank-Import",
+        "CSV-Export der Bank hochladen oder Umsätze aus dem Online-Banking einfügen. Erkennt doppelte Buchungen "
+        "und merkt sich Bezeichnung und Kategorie je Empfänger."),
+    "excel_import": Section(
+        "Excel-Import", "/import", "„Mehr“ → Excel-Import",
+        "Die alte Excel-Tabelle mit Vorschau übernehmen: Buchungen, Kontostände, Kredite, Vermögensverlauf."),
+    "einstellungen": Section(
+        "Einstellungen", "/einstellungen", "Zahnrad-Symbol oben rechts oder „Mehr“ → Einstellungen",
+        "Passwort ändern, App auf dem Smartphone installieren, Daten als CSV exportieren und das Konto löschen."),
+    "mehr": Section(
+        "Mehr", "/mehr", "Reiter „Mehr“ (Sechseck mit Punkten)",
+        "Alle weiteren Bereiche als Kacheln: Jahr, Kredite, Daueraufträge, Konten, Kategorien, Suche, Importe, "
+        "Export, Einstellungen und Abmelden."),
+}
+
+
+def find_section(name: str) -> Section:
+    key = str(name or "").strip().lower()
+    for umlaut, plain in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss"), ("-", "_"), (" ", "_")):
+        key = key.replace(umlaut, plain)
+    if key in SECTIONS:
+        return SECTIONS[key]
+    raise ToolError(f"Bereich „{name}“ gibt es nicht. Vorhanden: {', '.join(SECTIONS)}")
+
+
+def tool_explain(user_id: int, data: dict, today: dt.date) -> dict:
+    """What a section of the app shows and where to find it – one section or all of them."""
+    sections = [find_section(data["bereich"])] if data.get("bereich") else SECTIONS.values()
+    return {"bereiche": [{"bereich": s.title, "wo": s.where, "inhalt": s.explanation} for s in sections]}
+
+
+def tool_navigate(user_id: int, data: dict, today: dt.date) -> dict:
+    """A link to a section. For month and year an optional period. Nothing is opened automatically."""
+    section = find_section(data.get("bereich"))
+    path, title = section.path, section.title
+    year, month = data.get("jahr"), data.get("monat")
+    if section.path in ("/monat", "/jahr") and (year or month):
+        try:
+            year = int(year or today.year)
+            month = int(month or today.month)
+        except (TypeError, ValueError):
+            raise ToolError("„jahr“ und „monat“ müssen Zahlen sein.") from None
+        if not (1900 <= year <= 2200 and 1 <= month <= 12):
+            raise ToolError("Ungültiger Monat oder ungültiges Jahr.")
+        if section.path == "/monat":
+            path, title = f"/monat/{year}/{month}", f"{MONTHS[month - 1]} {year}"
+        else:
+            path, title = f"/jahr/{year}", f"Jahr {year}"
+    return {"link": path, "titel": title,
+            "hinweis": "Der Link erscheint als Knopf unter deiner Antwort. Schreib die Adresse nicht in den Text."}
 
 
 @dataclass
@@ -323,7 +433,9 @@ TOOLS: dict[str, Tool] = {
     "buchungen_suchen": Tool(
         tool_search,
         "Einzelne Buchungen finden: nach Text (Beschreibung oder Kategorie), Betrag und/oder Zeitraum. "
-        f"Liefert höchstens {MAX_SEARCH_RESULTS} Buchungen und die Summe aller Treffer.",
+        f"Liefert höchstens {MAX_SEARCH_RESULTS} Buchungen und je eine Summe für Ausgaben, Einnahmen und "
+        "Umbuchungen. Will der Nutzer alle Buchungen eines Monats sehen, nutze stattdessen "
+        "zu_bereich_navigieren mit bereich 'monat'.",
         {"text": {"type": "string", "description": "Suchtext, z. B. Amazon"},
          "betrag": {"type": "string", "description": "Betrag, z. B. 23,50"},
          **PERIOD},
@@ -332,6 +444,21 @@ TOOLS: dict[str, Tool] = {
         tool_standing_orders,
         "Aktive Daueraufträge (Miete, Gehalt, Abos, Kreditraten) mit Summen pro Monat und die "
         "Kategorien mit Fixkosten-Haken. Für Fragen nach festen monatlichen Kosten."),
+    "app_bereich_erklaeren": Tool(
+        tool_explain,
+        "Erklärt, was ein Bereich der App zeigt und wo man ihn findet. Ohne 'bereich' kommen alle Bereiche. "
+        f"Bereiche: {', '.join(SECTIONS)}.",
+        {"bereich": {"type": "string", "enum": list(SECTIONS)}},
+    ),
+    "zu_bereich_navigieren": Tool(
+        tool_navigate,
+        "Liefert einen Link-Knopf zu einem Bereich der App, wenn der Nutzer dorthin möchte oder es ihm hilft. "
+        "Für 'monat' und 'jahr' optional einen bestimmten Monat bzw. ein Jahr.",
+        {"bereich": {"type": "string", "enum": list(SECTIONS)},
+         "jahr": {"type": "integer", "description": "z. B. 2026 (nur für monat/jahr)"},
+         "monat": {"type": "integer", "description": "1 bis 12 (nur für monat)"}},
+        ("bereich",),
+    ),
     "kategorien_auflisten": Tool(
         tool_categories, "Namen aller Kategorien (mit Art, Fixkosten, Budget) und aller Konten."),
 }
@@ -375,6 +502,13 @@ keine Übertreibungen.
 - Enthält eine Nachricht mehrere Fragen, beantworte jede davon.
 - Kennst du den genauen Namen einer Kategorie oder eines Kontos nicht, nutze kategorien_auflisten.
 - Ein Monat ohne Jahr meint den letzten solchen Monat bis heute.
+- Fragen zur App (welcher Reiter was zeigt, wo man etwas findet oder einstellt) beantwortest du mit \
+app_bereich_erklaeren. Fragt der Nutzer, wo er etwas findet, oder möchte er etwas sehen oder tun, gib ihm \
+zusätzlich mit zu_bereich_navigieren einen Link-Knopf zum passenden Bereich. Der Knopf erscheint unter deiner Antwort; schreib keine Adressen in den Text.
+- Will der Nutzer Buchungen eines Monats sehen, gib einen Link zu diesem Monat statt sie aufzuzählen. \
+Zähl höchstens 5 einzelne Buchungen auf.
+- Frühere Antworten von dir enden mit [Link-Knöpfe: …], wenn dort Knöpfe gezeigt wurden. Diese Knöpfe \
+waren schon da; wiederhole sie nicht und schreib diese Markierung nicht selbst.
 - Du gibst keine Anlage-, Steuer- oder Rechtsberatung, sondern wertest nur die Daten der App aus.
 - Du kannst nichts buchen, ändern oder löschen. Für Fragen ohne Bezug zu den Finanzen oder zur App \
 sag kurz, dass du dabei nicht helfen kannst."""
@@ -386,6 +520,11 @@ class Reply:
     input_tokens: int = 0
     output_tokens: int = 0
     tools_used: list[str] = field(default_factory=list)
+    links: list[dict] = field(default_factory=list)  # link buttons below the answer: {"title", "url"}
+
+    def add_link(self, title: str, url: str) -> None:
+        if all(link["url"] != url for link in self.links):
+            self.links.append({"title": title, "url": url})
 
 
 def clean_history(messages: object) -> list[dict]:
@@ -447,7 +586,8 @@ def chat(client, user_id: int, history: list[dict], today: dt.date | None = None
             reply.text = "Dabei kann ich dir leider nicht helfen. Frag mich gern etwas zu deinen Finanzen."
             return reply
 
-        text = "\n".join(b.text for b in response.content if b.type == "text").strip()
+        text = "\n".join(b.text for b in response.content if b.type == "text")
+        text = LINK_NOTE.sub("", text).strip()  # the marker is only for the history, never for the user
         tool_calls = [b for b in response.content if b.type == "tool_use"]
         if response.stop_reason != "tool_use" or not tool_calls:
             reply.text = text or "Dazu habe ich gerade keine Antwort gefunden. Versuch es bitte anders formuliert."
@@ -459,6 +599,9 @@ def chat(client, user_id: int, history: list[dict], today: dt.date | None = None
         for call in tool_calls:
             content, is_error = run_tool(user_id, call.name, call.input, today)
             reply.tools_used.append(call.name)
+            if call.name == "zu_bereich_navigieren" and not is_error:
+                target = json.loads(content)
+                reply.add_link(target["titel"], target["link"])
             results.append({"type": "tool_result", "tool_use_id": call.id, "content": content,
                             **({"is_error": True} if is_error else {})})
         messages.append({"role": "user", "content": results})

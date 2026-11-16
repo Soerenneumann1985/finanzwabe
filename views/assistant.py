@@ -43,7 +43,7 @@ def message():
         else:
             text = "Bei Claude ist gerade etwas schiefgelaufen. Versuch es bitte später noch einmal."
     else:
-        return jsonify(reply=result.text, configured=True,
+        return jsonify(reply=result.text, configured=True, links=result.links,
                        usage={"input_tokens": result.input_tokens, "output_tokens": result.output_tokens})
     return jsonify(reply=text, configured=True, error=True)
 

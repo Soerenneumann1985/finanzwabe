@@ -1012,6 +1012,21 @@ textarea:focus { border-color: var(--royal); box-shadow: 0 0 0 4px color-mix(in 
   background: linear-gradient(150deg, #4a74f5, var(--royal));
   border-bottom-right-radius: 5px;
 }
+.wabi-links { display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; max-width: 86%; }
+.wabi-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: .9rem;
+  font-weight: 650;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(150deg, #4a74f5, var(--royal));
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--royal) 30%, transparent);
+}
+.wabi-link:hover { background: var(--royal-hover); }
 .wabi-msg.is-error { border-color: var(--over); color: var(--over-ink); background: var(--over-bg); }
 .wabi-typing { display: inline-flex; gap: 4px; padding: 13px 14px; }
 .wabi-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
