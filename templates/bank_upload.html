@@ -33,9 +33,9 @@
     <div class="card-head"><h2>So funktioniert's</h2></div>
     <div class="card-body" style="padding-top: 0">
       <ul class="muted" style="margin: 0; padding-left: 18px">
-        <li><strong>CSV:</strong> Fast jede Bank bietet unter „Umsätze“ einen Export als CSV an. Spalten wie „Buchungstag“, „Betrag“ und „Verwendungszweck“ erkennt die App selbst.</li>
+        <li><strong>CSV:</strong> Fast jede Bank bietet unter „Umsätze“ einen Export als CSV an. Die App erkennt die Bank an der Kopfzeile (Bankprofile). Kennt sie die Datei noch nicht, ordnest du die Spalten einmal selbst zu und kannst das als neues Profil speichern.</li>
         <li><strong>Einfügen:</strong> Klappt mit Umsatzlisten, in denen pro Buchung Datum, Empfänger und Betrag untereinander stehen. Überschriften wie „Oktober 2026“ liefern das Jahr.</li>
-        <li><strong>Doppelte:</strong> Buchungen mit gleichem Betrag, die höchstens 3 Tage auseinander schon im Konto stehen, sind in der Vorschau abgewählt.</li>
+        <li><strong>Doppelte:</strong> Mit Kundenreferenz in der CSV (z. B. OLB) zählt nur die Referenz: dieselbe Buchung ist schon da, gleiche Beträge mit anderer Referenz nicht. Sonst sind Buchungen mit gleichem Betrag, höchstens 3 Tage auseinander, in der Vorschau abgewählt.</li>
         <li><strong>Lernt mit:</strong> Bezeichnung und Kategorie, die du in der Vorschau wählst, schlägt die App beim nächsten Import für denselben Empfänger wieder vor.</li>
       </ul>
       <p class="muted small" style="margin-bottom: 0">Du hast eine Excel-Tabelle? Dafür gibt es den <a href="{{ url_for('importer.upload') }}">Excel-Import</a>.</p>

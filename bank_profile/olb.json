@@ -1,0 +1,19 @@
+{
+  "name": "olb",
+  "label": "OLB (Oldenburgische Landesbank)",
+  "encoding": "cp1252",
+  "delimiter": ";",
+  "decimal": ".",
+  "date_format": "%d.%m.%Y",
+  "columns": {
+    "date": "Buchungsdatum",
+    "payee": "Empfänger/Auftraggeber",
+    "purpose": "Verwendungszweck",
+    "amount": "Betrag",
+    "reference": "Kundenreferenz"
+  },
+  "detect": [
+    "Inhaberkonto", "Buchungsdatum", "Valuta", "Empfänger/Auftraggeber", "IBAN",
+    "Verwendungszweck", "Betrag", "Währung", "Kundenreferenz", "Auftragsart"
+  ]
+}

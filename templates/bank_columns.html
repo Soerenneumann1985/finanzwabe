@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_macros.html" as ui %}
+{% set band_short = true %}
+{% set active = "more" %}
+{% block title %}Spalten zuordnen{% endblock %}
+{% block content %}
+{% set labels = {"date": "Buchungsdatum *", "amount": "Betrag *", "payee": "Empfänger / Auftraggeber",
+                 "purpose": "Verwendungszweck", "reference": "Kundenreferenz (erkennt Doppelte genau)"} %}
+<div class="stack">
+  <section class="card">
+    <div class="card-head"><h2>Diese Datei kenne ich noch nicht</h2></div>
+    <div class="card-body" style="padding-top: 0">
+      <p class="muted">Zu dieser Kopfzeile passt kein Bankprofil. Damit nichts falsch zugeordnet wird, sagst du mir einmal, welche Spalte was ist. Ich habe unten nur einen Vorschlag eingetragen.</p>
+      <p class="muted small" style="margin-bottom: 0">Gefundene Spalten ({{ info.columns|length }}): <strong>{{ info.columns|join(" · ") }}</strong></p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>{% for c in info.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in info.samples %}
+          <tr>{% for c in info.columns %}<td>{{ (row[loop.index0] if loop.index0 < row|length else "")[:40] }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-foot muted small">Die ersten Zeilen der Datei. Erkanntes Zeichensatz-Format: {{ info.encoding }}.</div>
+  </section>
+
+  <section class="card">
+    <form class="form" method="post" action="{{ url_for('bank_import.columns') }}">
+      {{ ui.csrf() }}
+      {% if error %}<div class="flash error" style="margin-bottom: 14px">{{ icon("alert") }}<span>{{ error }}</span></div>{% endif %}
+      {% for f in fields %}
+      <div class="field">
+        <label for="col_{{ f }}">{{ labels[f] }}</label>
+        <select id="col_{{ f }}" name="col_{{ f }}">
+          <option value="">– nicht vorhanden –</option>
+          {% for c in info.columns %}<option value="{{ loop.index0 }}"{% if form.chosen.get(f) == loop.index0 %} selected{% endif %}>{{ c or "(ohne Namen)" }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+      <div class="field">
+        <label for="decimal">Dezimaltrenner im Betrag</label>
+        <select id="decimal" name="decimal">
+          <option value=","{% if form.decimal == "," %} selected{% endif %}>Komma (12,50)</option>
+          <option value="."{% if form.decimal == "." %} selected{% endif %}>Punkt (12.50)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="date_format">Datumsformat</label>
+        <select id="date_format" name="date_format">
+          {% for fmt, name in date_formats.items() %}<option value="{{ fmt }}"{% if form.date_format == fmt %} selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="check"><input type="checkbox" name="save_profile" value="1"{% if form.save %} checked{% endif %}> Als neues Bankprofil speichern</label>
+        <input type="text" name="profile_label" value="{{ form.label }}" maxlength="60" placeholder="Name der Bank, z. B. Sparkasse" aria-label="Name des Profils">
+        <div class="hint">Beim nächsten Import dieser Bank wird die Datei dann von selbst erkannt.</div>
+      </div>
+      <button class="btn" type="submit">{{ icon("check") }} Weiter zur Vorschau</button>
+    </form>
+  </section>
+  <form method="post" action="{{ url_for('bank_import.cancel') }}">
+    {{ ui.csrf() }}
+    <button class="btn secondary" type="submit">Abbrechen</button>
+  </form>
+</div>
+{% endblock %}

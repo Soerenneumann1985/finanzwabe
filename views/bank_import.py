@@ -1,6 +1,7 @@
 """Bank import in three steps: upload or paste -> preview (edit each row) -> import."""
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 
@@ -30,6 +31,35 @@ def _load_pending() -> tuple[int, list[bank_import.BankRow]] | None:
     return data["account_id"], bank_import.rows_from_data(data["rows"])
 
 
+def _raw_file() -> Path:
+    """A CSV file with an unknown header waits here until the user has mapped the columns."""
+    return _pending_file().with_name(f"bank-user-{g.user.id}-raw.json")
+
+
+def _load_raw() -> tuple[int, bytes] | None:
+    raw = _raw_file()
+    if not raw.exists():
+        return None
+    data = json.loads(raw.read_text(encoding="utf-8"))
+    return data["account_id"], base64.b64decode(data["file"])
+
+
+def _stash_rows(account_id: int, rows: list[bank_import.BankRow]) -> str | None:
+    """Keep the rows for the preview page. Returns an error text if there are too many."""
+    if len(rows) > MAX_ROWS:
+        return f"Das sind {len(rows)} Buchungen. Bitte höchstens {MAX_ROWS} auf einmal importieren."
+    data = {"account_id": account_id, "rows": bank_import.rows_to_data(rows)}
+    _pending_file().write_text(json.dumps(data), encoding="utf-8")
+    return None
+
+
+def _announce(result: bank_import.CsvResult, recognised: bool = True) -> None:
+    if recognised:
+        flash(f"Bankprofil erkannt: {result.profile.label}.", "info")
+    if result.skipped:
+        flash(f"{result.skipped} Zeilen der Datei konnten nicht gelesen werden und fehlen in der Vorschau.", "info")
+
+
 @bp.route("/import/bank", methods=["GET", "POST"])
 @login_required
 def upload():
@@ -40,15 +70,22 @@ def upload():
         account = next((a for a in accounts if a.id == request.form.get("account_id", type=int)), None)
         file = request.files.get("file")
         pasted = request.form.get("text", "")
-        rows = None
+        rows = result = None
         if account is None:
             error = "Bitte das Konto wählen, zu dem die Umsätze gehören."
         elif file is not None and file.filename:
             if not file.filename.lower().endswith((".csv", ".txt")):
                 error = "Bitte eine CSV-Datei auswählen (Export aus dem Online-Banking)."
             else:
+                content = file.read()
                 try:
-                    rows = bank_import.parse_csv(file.read())
+                    result = bank_import.read_csv(content)
+                    rows = result.rows
+                except bank_import.UnknownHeader:
+                    # No bank profile fits: never guess, let the user map the columns.
+                    payload = {"account_id": account.id, "file": base64.b64encode(content).decode("ascii")}
+                    _raw_file().write_text(json.dumps(payload), encoding="utf-8")
+                    return redirect(url_for(".columns"))
                 except ValueError as exc:
                     error = str(exc)
         elif pasted.strip():
@@ -58,16 +95,61 @@ def upload():
                 error = str(exc)
         else:
             error = "Bitte eine CSV-Datei auswählen oder die Umsätze in das Textfeld einfügen."
-        if rows is not None and len(rows) > MAX_ROWS:
-            error = f"Das sind {len(rows)} Buchungen. Bitte höchstens {MAX_ROWS} auf einmal importieren."
-        elif rows is not None:
-            data = {"account_id": account.id, "rows": bank_import.rows_to_data(rows)}
-            _pending_file().write_text(json.dumps(data), encoding="utf-8")
-            return redirect(url_for(".preview"))
+        if rows is not None:
+            error = _stash_rows(account.id, rows)
+            if error is None:
+                if result is not None:
+                    _announce(result)
+                return redirect(url_for(".preview"))
     giro = next((a for a in accounts if a.type == "giro"), accounts[0] if accounts else None)
     selected = request.form.get("account_id", type=int) or (giro.id if giro else None)
     return render_template("bank_upload.html", accounts=accounts, selected=selected, pasted=pasted,
                            error=error), 400 if error else 200
+
+
+@bp.route("/import/bank/spalten", methods=["GET", "POST"])
+@login_required
+def columns():
+    """The header line fits no bank profile: the user says which column is which."""
+    pending = _load_raw()
+    if pending is None:
+        return redirect(url_for(".upload"))
+    account_id, content = pending
+    try:
+        info = bank_import.describe_csv(content)
+    except ValueError as exc:
+        _raw_file().unlink(missing_ok=True)
+        flash(str(exc), "error")
+        return redirect(url_for(".upload"))
+
+    error = None
+    form = {"chosen": info.suggestion, "decimal": info.decimal, "date_format": info.date_format,
+            "save": False, "label": ""}
+    if request.method == "POST":
+        form = {"chosen": {f: request.form.get(f"col_{f}", type=int) for f in bank_import.FIELDS},
+                "decimal": request.form.get("decimal", ""), "date_format": request.form.get("date_format", ""),
+                "save": bool(request.form.get("save_profile")),
+                "label": request.form.get("profile_label", "").strip()[:60]}
+        try:
+            name = bank_import.slugify(form["label"]) if form["save"] else ""
+            if form["save"] and not name:
+                raise ValueError("Bitte einen Namen für das neue Profil eingeben.")
+            profile = bank_import.profile_from_mapping(info, form["chosen"], form["decimal"],
+                                                       form["date_format"], label=form["label"], name=name)
+            result = bank_import.parse_with_profile(content, profile)
+            error = _stash_rows(account_id, result.rows)
+            if error is None:
+                if form["save"]:
+                    bank_import.save_profile(profile)
+                _raw_file().unlink(missing_ok=True)
+                if form["save"]:
+                    flash(f"Profil „{profile.label}“ gespeichert. Beim nächsten Import wird es erkannt.", "success")
+                _announce(result, recognised=False)
+                return redirect(url_for(".preview"))
+        except ValueError as exc:
+            error = str(exc)
+    return render_template("bank_columns.html", info=info, form=form, error=error,
+                           fields=bank_import.FIELDS, date_formats=bank_import.DATE_FORMATS), 400 if error else 200
 
 
 @bp.route("/import/bank/vorschau", methods=["GET", "POST"])
@@ -120,5 +202,6 @@ def preview():
 @login_required
 def cancel():
     _pending_file().unlink(missing_ok=True)
+    _raw_file().unlink(missing_ok=True)
     flash("Import abgebrochen.", "info")
     return redirect(url_for(".upload"))
