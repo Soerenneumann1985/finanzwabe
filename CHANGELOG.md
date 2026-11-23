@@ -4,6 +4,14 @@ Alle wichtigen Änderungen an Finanzwabe stehen hier. Das Format folgt
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), die Versionsnummern folgen
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [Unveröffentlicht]
+
+### Hinzugefügt
+- **Lizenz:** `LICENSE` mit der PolyForm Noncommercial License 1.0.0 (Originalwortlaut, Rechteinhaber Sören
+  Neumann). Private und nicht kommerzielle Nutzung ist erlaubt, kommerzielle Nutzung durch Dritte nicht.
+  Dazu ein Abschnitt „Lizenz“ in der README. Die Lizenz gilt ab diesem Stand; frühere Versionen (bis 0.4.0)
+  wurden ohne Lizenz veröffentlicht.
+
 ## [0.4.0] – 2026-11-23
 
 Finanzwabe als Windows-Programm: herunterladen, doppelklicken, benutzen.

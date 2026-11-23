@@ -343,3 +343,18 @@ Der persönliche Startplan liegt bewusst nicht im Repository.
 - Seiten mit Finanzdaten werden nie zwischengespeichert, auch nicht offline auf dem Handy.
 - Keine Tracker, keine externen Schriftarten oder Skripte.
 - Echte Daten (Benutzerordner, `instance/`, `*.db`, Excel- und CSV-Dateien) sind per `.gitignore` vom Repository ausgeschlossen.
+
+## Lizenz
+
+Finanzwabe steht unter der [PolyForm Noncommercial License 1.0.0](LICENSE). In einfachen Worten:
+
+- **Erlaubt:** den Code ansehen, Finanzwabe privat nutzen, testen, ausprobieren, daran lernen und basteln.
+  Nicht kommerzielle Nutzung ist erlaubt, auch durch Schulen, gemeinnützige Organisationen und Behörden.
+- **Nicht erlaubt:** damit Geld verdienen, zum Beispiel verkaufen, als bezahlten Dienst anbieten oder im
+  Geschäft einsetzen. Dafür brauchst du meine ausdrückliche Erlaubnis.
+- **Alle Rechte** am Programm liegen bei mir, Sören Neumann. Wer Kopien weitergibt, muss die Lizenz
+  (Datei `LICENSE`) mitgeben.
+- Die Software kommt ohne Gewähr („wie sie ist“).
+
+Das ist eine Zusammenfassung und keine Rechtsberatung; maßgeblich ist der Text in [LICENSE](LICENSE).
+Die verwendeten Bibliotheken (Flask, SQLAlchemy und andere) haben ihre eigenen Lizenzen.
