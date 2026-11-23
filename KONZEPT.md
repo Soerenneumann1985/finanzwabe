@@ -1,10 +1,10 @@
-# Finanz-App – Konzept für Claude Code
+# Finanzwabe – ursprüngliches Konzept
 
-Sep 29, 2026 · @Sören
+> Historisches Dokument, teilweise überholt. Der aktuelle Stand steht in der README und im CHANGELOG.
 
 ## Ziel und Idee
 
-Die App ersetzt meine selbst gebaute Excel-Finanztabelle und automatisiert, was dort heute von Hand passiert. Sie beantwortet drei Fragen auf einen Blick:
+Die App ersetzt eine selbst gebaute Excel-Finanztabelle und automatisiert, was dort heute von Hand passiert. Sie beantwortet drei Fragen auf einen Blick:
 
 1. **Wofür gebe ich mein Geld aus?** Einnahmen und Ausgaben pro Monat, nach Kategorien.
 2. **Wie stehe ich insgesamt da?** Guthaben (Girokonto, Depot, Sparkonto) minus Schulden (Kredite, Kreditkarten, Darlehen) ergibt das Nettovermögen.
@@ -12,9 +12,9 @@ Die App ersetzt meine selbst gebaute Excel-Finanztabelle und automatisiert, was 
 
 Zielgruppe sind Menschen, die ihre Finanzen bewusst im Griff haben wollen und neben den Ausgaben auch Kredite abzahlen. Punkt 2 und 3 unterscheiden die App von reinen Haushaltsbuch-Apps.
 
-Weg zum Verkauf: erst eine Version bauen, die ich selbst statt der Excel-Tabelle nutze, dann Testnutzer finden, erst danach über Verkauf entscheiden.
+Vorgehen: erst eine Version für den eigenen Gebrauch bauen, dann Testnutzer finden.
 
-## Das Vorbild: meine Excel-Tabelle
+## Das Vorbild: eine Excel-Tabelle
 
 Jeder Monat ist in der Tabelle ein geschlossener Block aus drei Teilen. Die App übernimmt genau diese Logik.
 
@@ -74,7 +74,7 @@ Vier Tabellen reichen für die erste Version. Beträge werden als ganze Cent (In
 | Feld | Typ | Bedeutung |
 | --- | --- | --- |
 | id | int | Primärschlüssel |
-| name | text | z. B. „Autokredit“, „Bafög-Darlehen“ |
+| name | text | z. B. „Autokredit“, „Ratenkredit“ |
 | start\_amount\_cents | int | ursprüngliche Schuld |
 | monthly\_rate\_cents | int | monatliche Rate |
 | start\_date | date | erste Rate |
@@ -82,7 +82,7 @@ Vier Tabellen reichen für die erste Version. Beträge werden als ganze Cent (In
 
 ## Kernfunktionen der ersten Version (MVP)
 
-Das MVP bildet meine Excel-Tabelle vollständig ab, ohne Extras.
+Das MVP bildet die Excel-Vorlage vollständig ab, ohne Extras.
 
 1. **Konten verwalten:** anlegen, bearbeiten, löschen (Girokonto, Sparkonto, Depot, Kreditkarte, Kredit).
 2. **Kategorien verwalten:** anlegen mit Art (Einnahme/Ausgabe/Umbuchung) und Fixkosten-Haken. Beim ersten Start werden Standardkategorien angelegt.
@@ -103,20 +103,20 @@ Rechenregeln (die App rechnet alles selbst, nichts wird von Hand summiert):
 | Restschuld Kredit | Startbetrag minus Rate × Anzahl gezahlter Monate seit Startdatum, mindestens 0 |
 | Nettovermögen | Summe aller Guthaben minus Summe aller Schulden |
 
-Die Restschuld-Regel ist eine Vereinfachung ohne Zinsen. Sie entspricht meiner bisherigen Rechnung in Excel. Zinsen sind eine spätere Ausbaustufe.
+Die Restschuld-Regel ist eine Vereinfachung ohne Zinsen. Sie entspricht der Rechnung der Excel-Vorlage. Zinsen sind eine spätere Ausbaustufe.
 
 Jede Rechenregel bekommt einen eigenen automatisierten Test (pytest), damit Fehler wie das Doppelzählen gar nicht erst entstehen.
 
 ## Technik und Projektstruktur
 
-Die App wird eine Web-App mit Python, die zunächst lokal auf meinem Rechner läuft. Der Stack baut auf dem auf, was ich schon kenne.
+Die App wird eine Web-App mit Python, die zunächst lokal auf dem eigenen Rechner läuft. Der Stack setzt auf bewährte, einfache Bausteine.
 
 | Baustein | Wahl | Warum |
 | --- | --- | --- |
-| Sprache | Python 3.12 | kenne ich aus dem Kurs |
+| Sprache | Python 3.12 | weit verbreitet, gut lesbar |
 | Datenbank | SQLite | eine Datei, keine Installation |
-| Datenbankzugriff | SQLAlchemy (ORM) | kenne ich aus dem Flugdaten-Projekt |
-| Web-Framework | Flask mit Jinja-Templates | einfach, gut für den Einstieg, HTML/CSS kenne ich von meiner Homepage |
+| Datenbankzugriff | SQLAlchemy (ORM) | Standard-ORM für Python |
+| Web-Framework | Flask mit Jinja-Templates | einfach, gut für den Einstieg, HTML/CSS ohne Framework |
 | Diagramme | Chart.js (ab Ausbaustufe 2) | einfache Balken- und Liniendiagramme im Browser |
 | Tests | pytest | für alle Rechenregeln |
 | Versionskontrolle | Git + GitHub | kleine Commits nach jedem Schritt |
@@ -140,11 +140,11 @@ finanz-app/
 
 `calculations.py` enthält nur reine Funktionen ohne Datenbank- oder Web-Code. So lassen sie sich leicht testen und später in eine andere Oberfläche (z. B. Handy-App) übernehmen.
 
-**Datenschutz:** Meine echten Finanzdaten kommen nie ins Git-Repository. Die Datenbankdatei steht in `.gitignore`, `seed.py` erzeugt nur erfundene Beispieldaten.
+**Datenschutz:** Echte Finanzdaten kommen nie ins Git-Repository. Die Datenbankdatei steht in `.gitignore`, `seed.py` erzeugt nur erfundene Beispieldaten.
 
 ## Ausbaustufen nach dem MVP
 
-Erst wenn ich das MVP einen Monat lang statt der Excel-Tabelle benutzt habe, kommen Extras dazu. Reihenfolge nach Nutzen:
+Erst wenn das MVP einen Monat lang statt der Excel-Tabelle benutzt wurde, kommen Extras dazu. Reihenfolge nach Nutzen:
 
 | Stufe | Funktion | Nutzen |
 | --- | --- | --- |
@@ -153,16 +153,16 @@ Erst wenn ich das MVP einen Monat lang statt der Excel-Tabelle benutzt habe, kom
 | 3 | CSV-Import von Kontoauszügen | kein Abtippen mehr |
 | 3 | Automatische Kategorie-Vorschläge („Supermarkt“ erkannt an der Beschreibung) | schnelleres Erfassen |
 | 3 | Wiederkehrende Buchungen (Miete, Abos, Kreditraten) | Fixkosten tragen sich selbst ein |
-| 4 | Excel-Import meiner alten Tabelle | meine Daten ab 2016 übernehmen |
-| 4 | Kredite mit Zinsen und Prognose „schuldenfrei am …“ | stärkstes Verkaufsargument |
+| 4 | Excel-Import einer bestehenden Tabelle | vorhandene Daten übernehmen |
+| 4 | Kredite mit Zinsen und Prognose „schuldenfrei am …“ | stärkster Nutzen |
 | 4 | Budgets je Kategorie mit Warnung | Ausgaben begrenzen |
 | 5 | Benutzerkonten, Login, Hosting online | Voraussetzung für Testnutzer und Verkauf |
 
-Stufe 5 ist der Schritt zum Produkt. Ab da gelten Datenschutzpflichten (DSGVO), weil fremde Finanzdaten gespeichert werden. Das kläre ich vorher, notfalls mit Beratung. Stufe 5 passt außerdem zu meinem Cloud-Schwerpunkt in der Ausbildung.
+Stufe 5 ist der Schritt zum Produkt. Ab da gelten Datenschutzpflichten (DSGVO), weil fremde Finanzdaten gespeichert werden. Das ist vorher zu klären, notfalls mit Beratung.
 
 ## Arbeitsweise mit Claude Code
 
-Ich baue die App Schritt für Schritt, jeder Schritt endet mit einem laufenden Stand und einem Git-Commit. So lerne ich mit und behalte den Überblick.
+Die App wird Schritt für Schritt gebaut, jeder Schritt endet mit einem laufenden Stand und einem Git-Commit.
 
 ### Bauplan für das MVP
 
@@ -176,37 +176,3 @@ Ich baue die App Schritt für Schritt, jeder Schritt endet mit einem laufenden S
 8. Vermögensübersicht mit Nettovermögen, Restschulden, freiem Kreditrahmen.
 9. Einfaches, sauberes CSS.
 10. README mit Installationsanleitung und Screenshots.
-
-### Inhalt für CLAUDE.md
-
-Diese Datei legt Claude Code ins Projekt. Sie gilt dann für jede Sitzung.
-
-```markdown
-# Finanz-App – Regeln für Claude
-
-## Projekt
-Persönliche Finanz-App (Flask, SQLAlchemy, SQLite, pytest).
-Das vollständige Konzept steht in KONZEPT.md.
-
-## Ich lerne dabei
-- Ich bin Quereinsteiger und lerne Python. Erkläre, was du tust und warum.
-- Arbeite immer nur an EINEM Schritt aus dem Bauplan. Frag vor dem nächsten.
-- Wenn ich "Lernmodus" sage: gib mir ein Gerüst mit TODO-Kommentaren
-  und Hinweisen statt fertigem Code.
-- Antworte auf Deutsch, Code und Bezeichner auf Englisch.
-
-## Technische Regeln
-- Beträge immer als Integer in Cent speichern und rechnen.
-- Jede Buchung hat genau eine Kategorie.
-- Rechenlogik nur in calculations.py, als reine Funktionen mit Tests.
-- Keine echten Finanzdaten ins Repo. Die .db-Datei steht in .gitignore.
-- Nach jedem Schritt: Tests laufen lassen, dann Commit vorschlagen.
-```
-
-### Start-Prompt für die erste Sitzung
-
-Dieses Dokument als `KONZEPT.md` in den leeren Projektordner legen, Claude Code dort starten und schreiben:
-
-> Lies KONZEPT.md. Das ist das Konzept für meine Finanz-App. Stell mir zuerst Fragen, falls etwas unklar ist. Dann setze Schritt 1 aus dem Bauplan um: Projekt anlegen und CLAUDE.md mit dem Inhalt aus dem Konzept erstellen. Erkläre mir jeden Befehl. Mach danach eine Pause, bevor wir Schritt 2 angehen.
-
-In den folgenden Sitzungen reicht: „Weiter mit Schritt X aus dem Bauplan.“ Mit „im Lernmodus“ dahinter bekomme ich ein Gerüst zum Selbermachen.

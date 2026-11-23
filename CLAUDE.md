@@ -8,7 +8,7 @@ Das vollständige Konzept steht in KONZEPT.md.
 ## Arbeitsweise
 - Arbeite selbstständig und vollständig durch. Frag nur bei wirklich
   wichtigen Entscheidungen nach, nicht vor jedem Schritt.
-- Ich bin Quereinsteiger und lerne Python. Fasse am Ende kurz zusammen,
+- Der Projektinhaber lernt Python. Fasse am Ende kurz zusammen,
   was du gemacht hast und warum.
 - Wenn ich "Lernmodus" sage: gib mir ein Gerüst mit TODO-Kommentaren
   und Hinweisen statt fertigem Code.
