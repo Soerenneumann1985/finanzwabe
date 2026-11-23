@@ -1,14 +1,15 @@
 """Start Finanzwabe for daily use on this PC and on your smartphone.
 
-    .venv\\Scripts\\python serve.py           # your real data (instance/finanz.db)
+    .venv\\Scripts\\python serve.py           # your real data (in your user folder)
     .venv\\Scripts\\python serve.py --demo    # demo data for trying things out
     .venv\\Scripts\\python serve.py --port 8080
 
 The smartphone must be in the same Wi-Fi as this PC.
 
-Using several PCs: if the folder "Finanzwabe" exists in your OneDrive
-(or FINANZ_DATA_DIR points to a folder), the real data is read from there
-instead of instance/. Only ever run Finanzwabe on one PC at a time.
+Where the data lives: FINANZ_DATA_DIR if set, else the folder "Finanzwabe" in
+your OneDrive (if it exists), else your user folder (Windows: %LOCALAPPDATA%\\Finanzwabe).
+The start window always shows the folder. Only ever run Finanzwabe on one PC at a time
+when the data lives in OneDrive.
 """
 from __future__ import annotations
 
@@ -16,6 +17,8 @@ import argparse
 import os
 import socket
 from pathlib import Path
+
+import datadir
 
 LOCK_FILE = "in_benutzung.txt"
 
@@ -44,23 +47,23 @@ def port_in_use(port: int) -> bool:
 
 
 def shared_data_dir() -> Path | None:
-    """Folder that holds the real data for several PCs (OneDrive), if set up."""
-    custom = os.environ.get("FINANZ_DATA_DIR")
-    if custom:
-        return Path(custom)
-    onedrive = os.environ.get("OneDrive") or os.environ.get("OneDriveConsumer")
-    if onedrive and (Path(onedrive) / "Finanzwabe").is_dir():
-        return Path(onedrive) / "Finanzwabe"
-    return None
+    """Folder the user chose for the real data (FINANZ_DATA_DIR or OneDrive), if any."""
+    chosen = datadir.shared_data_dir()
+    return chosen[0] if chosen else None
 
 
-def use_shared_data_dir(data_dir: Path) -> Path:
-    """Point the app at the shared folder and mark it as in use by this PC."""
-    database = data_dir / "finanz.db"
+def use_shared_data_dir(location: datadir.DataLocation) -> Path:
+    """Point the app at the chosen folder and mark it as in use by this PC."""
+    data_dir = location.path
+    database = location.database
     if not database.is_file():
-        print(f"\n  Datenbank nicht gefunden: {database}")
-        print("  Ist OneDrive gestartet und fertig synchronisiert? Dann bitte neu starten.\n")
-        raise SystemExit(1)
+        if location.source == "onedrive":
+            # An empty folder usually means "OneDrive has not synced yet": a new empty
+            # database would later collide with the real one, so do not create one.
+            print(f"\n  Datenbank nicht gefunden: {database}")
+            print("  Ist OneDrive gestartet und fertig synchronisiert? Dann bitte neu starten.\n")
+            raise SystemExit(1)
+        data_dir.mkdir(parents=True, exist_ok=True)  # you chose this folder: start empty in it
     os.environ["FINANZ_DATABASE_URL"] = "sqlite:///" + database.as_posix()
     secret = data_dir / "secret_key"
     if secret.is_file():
@@ -97,9 +100,12 @@ def main() -> None:
         os.environ["FINANZ_DATABASE_URL"] = seed.demo_database_url()
 
     lock = None
-    data_dir = None if args.demo or os.environ.get("FINANZ_DATABASE_URL") else shared_data_dir()
-    if data_dir:
-        lock = use_shared_data_dir(data_dir)
+    location = None  # where the real data lives (None: demo or FINANZ_DATABASE_URL decides)
+    if not args.demo and not os.environ.get("FINANZ_DATABASE_URL"):
+        location = datadir.resolve_data_dir()
+        if location.shared:
+            lock = use_shared_data_dir(location)
+    first_start = location is not None and not location.database.is_file()
 
     from waitress import serve
     from app import create_app
@@ -118,8 +124,15 @@ def main() -> None:
         print(f"  Smartphone (WLAN):  http://{local_network_ip()}:{args.port}")
     if args.demo:
         print(f"  Demo-Anmeldung:     {seed.DEMO_EMAIL} / {seed.DEMO_PASSWORD}")
-    if data_dir:
-        print(f"  Daten (OneDrive):   {data_dir}")
+    if location:
+        label = {"env": "FINANZ_DATA_DIR", "onedrive": "OneDrive", "legacy": "Projektordner",
+                 "user": "Benutzerordner"}[location.source]
+        print(f"  Daten ({label}):\n    {location.path}")
+        if first_start:
+            print("  Erster Start: eine neue, leere Datenbank wurde angelegt (die Datei finanz.db).")
+        print("  Sicherungskopie = diesen Ordner kopieren.")
+    elif not args.demo:
+        print("  Daten:              Datenbank aus FINANZ_DATABASE_URL")
     print("  Beenden mit Strg+C")
     print()
     try:

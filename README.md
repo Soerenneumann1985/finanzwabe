@@ -198,9 +198,9 @@ Werkzeug-Antworten, höchstens 12 Nachrichten Verlauf pro Anfrage, Nachrichten a
 
 | Variable | Bedeutung | Standard |
 | --- | --- | --- |
-| `FINANZ_DATABASE_URL` | Datenbank | `sqlite:///instance/finanz.db` |
-| `FINANZ_SECRET_KEY` | Schlüssel für das Login-Cookie | wird in `instance/secret_key` erzeugt |
-| `FINANZ_DATA_DIR` | Ordner mit `finanz.db` für mehrere PCs | `OneDrive\Finanzwabe`, falls vorhanden |
+| `FINANZ_DATABASE_URL` | Datenbank | `finanz.db` im Datenordner (siehe „Wo liegen meine Daten?“) |
+| `FINANZ_SECRET_KEY` | Schlüssel für das Login-Cookie | wird als `secret_key` im Datenordner erzeugt |
+| `FINANZ_DATA_DIR` | Ordner für `finanz.db` (z. B. für mehrere PCs) | `OneDrive\Finanzwabe`, falls vorhanden, sonst der Benutzerordner |
 | `FINANZ_ALLOW_REGISTRATION` | `0` = keine neuen Registrierungen | `1` |
 | `FINANZ_HTTPS` | `1` = Cookie nur über HTTPS | aus |
 | `FINANZ_BEHIND_PROXY` | `1` hinter einem Hosting-Proxy | aus |
@@ -292,4 +292,4 @@ Der persönliche Startplan liegt bewusst nicht im Repository.
 - Jede Datenbankabfrage filtert nach dem angemeldeten Nutzer; Tests prüfen, dass niemand fremde Daten sieht.
 - Seiten mit Finanzdaten werden nie zwischengespeichert, auch nicht offline auf dem Handy.
 - Keine Tracker, keine externen Schriftarten oder Skripte.
-- Echte Daten (`instance/`, `*.db`, Excel- und CSV-Dateien) sind per `.gitignore` vom Repository ausgeschlossen.
+- Echte Daten (Benutzerordner, `instance/`, `*.db`, Excel- und CSV-Dateien) sind per `.gitignore` vom Repository ausgeschlossen.

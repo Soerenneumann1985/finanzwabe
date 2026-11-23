@@ -13,6 +13,7 @@ from pathlib import Path
 from flask import Flask, abort, render_template, request, session, url_for
 
 import charts
+import datadir
 import models
 from icons import icon
 from money import format_cents, format_cents_short, format_input, format_percent_bp
@@ -57,6 +58,9 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
+    if not app.config["DATABASE_URL"]:
+        # No database given: keep the data in the user folder (see datadir.py), not inside the project.
+        app.instance_path = str(datadir.resolve_data_dir().path)
     if not app.config["DATABASE_URL"] or not app.config["SECRET_KEY"]:
         os.makedirs(app.instance_path, exist_ok=True)
     if not app.config["DATABASE_URL"]:
