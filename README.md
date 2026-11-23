@@ -36,7 +36,8 @@ Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installi
 | Suche & Export | Suche nach Text, Kategorie oder Betrag; CSV-Export, der direkt in Excel aufgeht |
 | Konto | Mehrere Nutzer mit Login, Passwort ändern und vergessen (E-Mail), alle Daten löschen |
 | Excel-Import | Alte Tabelle mit Vorschau übernehmen: Buchungen, Kontostände, Kredite, Vermögensverlauf |
-| Bank-Import | CSV-Export der Bank hochladen oder Umsätze aus dem Online-Banking einfügen; erkennt Doppelte und lernt Bezeichnung und Kategorie je Empfänger |
+| Bank-Import | CSV-Export der Bank hochladen (Bankprofil wird an der Kopfzeile erkannt) oder Umsätze aus dem Online-Banking einfügen; liest PayPal-Händler, erkennt Doppelte (mit Kundenreferenz genau) und lernt Bezeichnung und Kategorie je Empfänger |
+| Wabi | KI-Assistent: beantwortet Fragen zu deinen Zahlen, führt durch die App und schlägt Buchungen vor (siehe unten) |
 | Start & Betrieb | Beta-Einladungscode, AGB-Zustimmung, Impressum/Datenschutz/AGB, Backups, Admin-Werkzeug |
 
 ## Schnellstart (Windows)
@@ -116,6 +117,34 @@ Finanzwabe immer nur auf **einem** PC gleichzeitig laufen lassen und mit Strg+C 
 `in_benutzung.txt` im OneDrive-Ordner warnt, falls die App auf einem anderen PC noch offen ist.
 Ein anderer Ordner lässt sich mit `FINANZ_DATA_DIR` festlegen.
 
+## Bank-Import (CSV)
+
+Unter **Mehr → Bank-Import** lädst du den CSV-Export deiner Bank hoch. Danach siehst du jede Buchung in
+einer Vorschau, erst dort wird gespeichert.
+
+1. **Bankprofil:** Die App erkennt die Bank an der Kopfzeile der Datei. Ein Profil (`bank_profile/*.json`)
+   beschreibt Zeichensatz, Trennzeichen, Dezimaltrenner, Datumsformat und die Spalten.
+2. **Unbekannte Datei:** Passt kein Profil, rät die App nichts. Sie zeigt die gefundenen Spalten, du ordnest
+   Datum, Betrag, Empfänger, Verwendungszweck und Kundenreferenz zu und kannst das als neues Profil speichern.
+3. **Zeichensatz:** Erst UTF-8 (mit oder ohne BOM), sonst der Zeichensatz des Profils (Windows-1252).
+   Umlaute in der Kopfzeile dürfen auch als `ae`/`oe`/`ue` oder als zerstörtes Zeichen � vorkommen.
+4. **PayPal:** Steht als Empfänger nur PayPal, liest die App den Händler aus dem Verwendungszweck
+   (vier bekannte Schreibweisen). Erkennt sie keine, gilt die normale Kategorie-Logik („Sonstiges“).
+5. **Doppelte:** Hat die Datei eine Kundenreferenz, zählt nur sie. Dieselbe Referenz ist schon gebucht,
+   drei Buchungen über je 200,00 € am selben Tag mit verschiedenen Referenzen bleiben drei Buchungen.
+   Ohne Referenz gilt wie bisher: gleicher Betrag, höchstens 3 Tage Abstand.
+6. **Lernen:** Bezeichnung und Kategorie, die du in der Vorschau wählst, schlägt die App beim nächsten
+   Import für denselben Empfänger oder Händler wieder vor.
+
+| Bank | Profil | Stand |
+| --- | --- | --- |
+| OLB (Oldenburgische Landesbank) | `bank_profile/olb.json` | mit einem echten Export geprüft |
+| andere Banken | selbst anlegen im Zuordnungs-Dialog | Spalten einmal zuordnen, als Profil speichern |
+
+Die Kundenreferenz steht in der neuen Spalte `transaction.customer_reference` (optional, wird beim Start
+automatisch ergänzt). CSV-Dateien mit echten Kontodaten gehören nie ins Repository; `.gitignore` schließt
+CSV, Excel und `.env` aus.
+
 ## Wabi, der KI-Assistent
 
 Die kleine Roboterbiene neben dem Logo ist dein Finanz-Assistent. Antippen – Wabi fliegt nach unten rechts
@@ -187,7 +216,7 @@ Werkzeug-Antworten, höchstens 12 Nachrichten Verlauf pro Anfrage, Nachrichten a
 .venv\Scripts\python -m pytest
 ```
 
-Über 200 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
+Rund 250 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
 ganze Web-App (Login, alle Seiten, Buchungen, Umbuchungen, Daueraufträge, Datentrennung zwischen Nutzern,
 Schutz vor gefälschten Formularen) sowie Wabi mit nachgebildeter Claude-API (`tests/test_wabi.py`).
 
@@ -200,6 +229,8 @@ finanz-app/
 ├── calculations.py     # ALLE Rechenregeln als reine Funktionen (ohne Datenbank, ohne Web)
 ├── services.py         # Datenbankabfragen pro Nutzer, reicht Werte an calculations.py weiter
 ├── wabi.py             # Wabi: API-Schlüssel, Werkzeuge und Gespräch mit Claude (Endpunkt: views/assistant.py)
+├── bank_import.py      # Bank-Import: Profile, CSV lesen, PayPal-Händler, Doppelte, Vorschläge
+├── bank_profile/       # Bankprofile (olb.json): nur Spaltennamen und Formate, keine Daten
 ├── money.py            # Beträge lesen ("1.234,56") und anzeigen
 ├── charts.py           # Positionen für die Diagramme (reines Layout)
 ├── icons.py            # Symbole als SVG
@@ -247,8 +278,10 @@ Alle Regeln stehen in `calculations.py`, jede mit eigenem Test. Beträge sind im
 Der persönliche Startplan liegt bewusst nicht im Repository.
 
 
-- CSV-Import von Kontoauszügen und Import der alten Excel-Tabelle (ab 2016).
 - Datenbank-Migrationen (Alembic), bevor sich Tabellen ändern, in denen schon echte Daten stehen.
+  Bis dahin ergänzt `add_missing_columns()` in `models.py` beim Start nur neue, optionale Spalten
+  (zuletzt `transaction.customer_reference`, die Kundenreferenz aus dem Bank-Import). Alles andere
+  (Spalten löschen oder umbenennen, Pflichtfelder) braucht weiterhin eine echte Migration.
 - Vor dem Verkauf: Impressum, Datenschutzerklärung, AGB, Auftragsverarbeitungsvertrag mit dem Hoster,
   automatische Backups, E-Mail-Bestätigung und „Passwort vergessen“, Bezahlmodell.
 

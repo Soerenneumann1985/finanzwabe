@@ -12,13 +12,20 @@ __pycache__/
 *.sqlite3
 instance/
 
-# Echte Daten: alte Excel-Tabelle, Kontoauszüge
+# Echte Daten: alte Excel-Tabelle, Kontoauszüge (CSV-Exporte der Bank gehören nie ins Repo).
+# Bankprofile (bank_profile/*.json) enthalten nur Spaltennamen und Formate und sind erlaubt.
 *.xlsx
 *.xls
+*.xlsm
+*.xlsb
+*.ods
 *.csv
+*.tsv
 
 # Geheimnisse und lokale Einstellungen
 .env
+.env.*
+*.env
 secret_key
 anthropic_api_key
 anthropic_api_key.txt

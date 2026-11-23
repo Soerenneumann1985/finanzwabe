@@ -190,7 +190,11 @@ def test_csv_upload_and_cancel(client, app):
     response = client.post("/import/bank", data={"account_id": giro_id,
                                                   "file": (io.BytesIO(SPARKASSE_CSV.encode("cp1252")), "umsatz.csv")},
                            content_type="multipart/form-data")
-    assert response.status_code == 302
+    # No bank profile fits this header: the user maps the columns (nothing is guessed).
+    assert response.status_code == 302 and response.headers["Location"].endswith("/import/bank/spalten")
+    mapping = {"col_date": "1", "col_amount": "8", "col_payee": "5", "col_purpose": "4", "col_reference": "",
+               "decimal": ",", "date_format": "%d.%m.%y"}
+    assert client.post("/import/bank/spalten", data=mapping).status_code == 302
     page = client.get("/import/bank/vorschau").text
     assert "Stadtwerke Musterstadt" in page
     client.post("/import/bank/abbrechen")

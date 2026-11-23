@@ -110,6 +110,10 @@ class Transaction(Base):
     counter_account_id: Mapped[int | None] = mapped_column(
         ForeignKey("account.id", ondelete="SET NULL"), index=True)
     recurring_id: Mapped[int | None] = mapped_column(ForeignKey("recurring.id", ondelete="SET NULL"))
+    # Reference number from the bank export (OLB: "Kundenreferenz"). Only set by the bank import
+    # and used to recognise the same booking on the next import. Optional, so
+    # add_missing_columns() can add it to an existing database.
+    customer_reference: Mapped[str | None] = mapped_column(String(64))
 
     category: Mapped[Category] = relationship()
     account: Mapped[Account] = relationship(foreign_keys=[account_id])
