@@ -5,7 +5,8 @@ below. Each tool reads the data of exactly one user through services.py and
 returns a compact summary – never the whole database. Wabi cannot write,
 delete or change anything (booking suggestions come in a later step).
 
-No Flask code in here; views/assistant.py is the web endpoint.
+Almost no Flask code in here (only key_folder looks up the running app's data folder);
+views/assistant.py is the web endpoint.
 """
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import calculations as calc
+import datadir
 import services
 from models import ACCOUNT_TYPES
 from money import NBSP, format_cents, format_input
@@ -37,8 +39,9 @@ API_KEY_ENV = "ANTHROPIC_API_KEY"
 API_KEY_FILES = ("anthropic_api_key", "anthropic_api_key.txt")
 
 NOT_CONFIGURED = (
-    "Ich bin noch nicht eingerichtet. Lege deinen API-Schlüssel aus der Claude Console als Datei "
-    "„anthropic_api_key“ in den Finanzwabe-Ordner in OneDrive (neben finanz.db) und starte die App neu."
+    "Ich bin ausgeschaltet, weil noch kein API-Schlüssel hinterlegt ist. Den Schlüssel bekommst du bei "
+    "Anthropic (console.anthropic.com). Die Kosten der KI-Anfragen trägst du selbst. "
+    "Trage ihn unter Einstellungen → Wabi ein, dann kann es sofort losgehen."
 )
 
 LINK_NOTE = re.compile(r"\n?\[(?:Link-Knöpfe|Vorschlag)[^\]]*\]")  # markers for the history only
@@ -49,16 +52,81 @@ MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
 
 # --- API key -------------------------------------------------------------------
 
-def key_folders() -> list[Path]:
-    """Folders that may hold the key file: the OneDrive data folder, then instance/."""
-    from serve import shared_data_dir  # same folder as finanz.db and secret_key
+def key_folder() -> Path:
+    """The folder of the user's data: the key saved in the settings lives next to finanz.db.
 
-    folders = []
-    shared = shared_data_dir()
-    if shared:
-        folders.append(shared)
-    folders.append(Path(__file__).resolve().parent / "instance")
+    It is never inside the project (and so never in the repository).
+    """
+    from flask import current_app, has_app_context
+
+    if has_app_context() and current_app.config.get("DATA_DIR"):
+        return Path(current_app.config["DATA_DIR"])
+    return datadir.resolve_data_dir().path
+
+
+def key_folders() -> list[Path]:
+    """Folders that may hold the key file: the data folder, then (older setups) instance/."""
+    folders = [key_folder()]
+    legacy = Path(__file__).resolve().parent / "instance"
+    if legacy not in folders:
+        folders.append(legacy)
     return folders
+
+
+def key_source(folders: list[Path] | None = None) -> str | None:
+    """Where the key comes from: "env", "file" or None. Never returns the key itself."""
+    if os.environ.get(API_KEY_ENV, "").strip():
+        return "env"
+    return "file" if _read_key_file(key_folders() if folders is None else folders) else None
+
+
+def _read_key_file(folders: list[Path]) -> str | None:
+    for folder in folders:
+        for name in API_KEY_FILES:
+            path = Path(folder) / name
+            if path.is_file():
+                key = "".join(path.read_text(encoding="utf-8-sig").split())
+                if key:
+                    return key
+    return None
+
+
+def check_key_format(raw: str) -> tuple[str | None, str | None]:
+    """(key, None) for a plausible key, else (None, message). The real check is Claude's, on first use."""
+    key = "".join((raw or "").split())  # a pasted key often carries spaces or a line break
+    if not key:
+        return None, "Bitte den API-Schlüssel einfügen."
+    if len(key) < 20 or len(key) > 300 or not key.isascii() or not key.isprintable():
+        return None, "Das sieht nicht wie ein API-Schlüssel aus. Kopiere ihn vollständig aus der Claude Console."
+    return key, None
+
+
+def save_api_key(key: str, folder: Path | None = None) -> Path:
+    """Write the key to the data folder (not the repository). Replaces an older key file."""
+    folder = key_folder() if folder is None else Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / API_KEY_FILES[0]
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(key, encoding="utf-8")
+    try:
+        temp.chmod(0o600)  # only this user may read it (has no effect on Windows)
+    except OSError:
+        pass
+    temp.replace(path)
+    (folder / API_KEY_FILES[1]).unlink(missing_ok=True)  # a second, older file would be confusing
+    return path
+
+
+def remove_api_key(folder: Path | None = None) -> bool:
+    """Delete the saved key file(s) in the data folder. True if something was removed."""
+    folder = key_folder() if folder is None else Path(folder)
+    removed = False
+    for name in API_KEY_FILES:
+        path = folder / name
+        if path.is_file():
+            path.unlink()
+            removed = True
+    return removed
 
 
 def load_api_key(folders: list[Path] | None = None) -> str | None:
@@ -69,14 +137,7 @@ def load_api_key(folders: list[Path] | None = None) -> str | None:
     key = os.environ.get(API_KEY_ENV, "").strip()
     if key:
         return key
-    for folder in key_folders() if folders is None else folders:
-        for name in API_KEY_FILES:
-            path = Path(folder) / name
-            if path.is_file():
-                key = "".join(path.read_text(encoding="utf-8-sig").split())
-                if key:
-                    return key
-    return None
+    return _read_key_file(key_folders() if folders is None else folders)
 
 
 def make_client(api_key: str):

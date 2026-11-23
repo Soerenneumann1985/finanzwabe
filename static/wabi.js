@@ -98,8 +98,17 @@
     if (log.childElementCount) return;
     addMessage(configured
       ? "Hallo, ich bin Wabi! Frag mich etwas zu deinen Finanzen, zum Beispiel was du im Oktober für Supermarkt ausgegeben hast."
-      : "Hallo, ich bin Wabi! Ich muss noch eingerichtet werden: Lege deinen API-Schlüssel als Datei „anthropic_api_key“ in den Finanzwabe-Ordner in OneDrive und starte die App neu.",
+      : "Hallo, ich bin Wabi! Ich bin ausgeschaltet, weil noch kein API-Schlüssel hinterlegt ist. Den Schlüssel bekommst du bei Anthropic (console.anthropic.com). Die Kosten der KI-Anfragen trägst du selbst. Trage ihn unter Einstellungen → Wabi ein.",
     "wabi");
+    if (!configured) addLinks([{ title: "Einstellungen", url: panel.dataset.settingsUrl }]);
+  }
+
+  // No key: the app works as usual, only the chat is switched off.
+  if (!configured) {
+    input.disabled = true;
+    input.placeholder = "Wabi ist ausgeschaltet (kein API-Schlüssel)";
+    sendButton.disabled = true;
+    if (suggestions) suggestions.hidden = true;
   }
 
   async function open() {
@@ -267,6 +276,7 @@
     let failed = true;
     let links = [];
     let proposal = null;
+    let notConfigured = false;
     try {
       const response = await fetch(panel.dataset.url, {
         method: "POST",
@@ -280,6 +290,7 @@
       failed = !response.ok || Boolean(data.error) || data.configured === false;
       links = data.links || [];
       proposal = data.proposal || null;
+      notConfigured = data.configured === false;
     } catch (error) {
       reply = error.name === "AbortError"
         ? "Das hat zu lange gedauert. Versuch es bitte gleich noch einmal."
@@ -290,6 +301,7 @@
     typing.remove();
     addMessage(reply, "wabi", failed && reply !== "" && !reply.startsWith("Ich bin noch nicht"));
     if (!failed) addLinks(links);
+    else if (notConfigured) addLinks([{ title: "Einstellungen", url: panel.dataset.settingsUrl }]);
     if (failed) history.pop();  // keep only real question/answer pairs
     else {
       // Wabi only sees text in the history, so note which link buttons were shown.

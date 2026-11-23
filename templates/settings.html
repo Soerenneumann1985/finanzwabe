@@ -50,6 +50,44 @@
       </div>
     </section>
 
+    <section class="card" id="wabi">
+      <div class="card-head"><h2>Wabi – KI-Assistent</h2></div>
+      <form class="form" method="post" action="{{ url_for('settings.save_wabi_key') }}" style="padding-top: 0" novalidate>
+        {{ ui.csrf() }}
+        <p>
+          {% if wabi_key_source %}<strong>Eingeschaltet.</strong>
+          {% if wabi_key_source == "env" %}Der Schlüssel kommt aus der Umgebungsvariable <code>ANTHROPIC_API_KEY</code>.
+          {% else %}Ein Schlüssel ist auf diesem Gerät gespeichert.{% endif %}
+          {% else %}<strong>Ausgeschaltet.</strong> Es ist noch kein API-Schlüssel hinterlegt. Alles andere in Finanzwabe funktioniert ganz normal.{% endif %}
+        </p>
+        <p class="muted">Wabi braucht einen eigenen Schlüssel von Anthropic. Du legst ihn in der
+          <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer">Claude Console (console.anthropic.com)</a>
+          unter „API keys“ an. <strong>Die Kosten der KI-Anfragen trägst du selbst</strong>: Anthropic rechnet jede
+          Frage direkt mit dir ab. Wie viel das ist, siehst du dort in deiner Nutzung.</p>
+        <p class="muted small">Der Schlüssel wird nur in deinem Datenordner auf diesem Gerät gespeichert, nie im
+          Projekt und nie auf GitHub. Er wird hier nicht noch einmal angezeigt. Mit jeder Frage gehen die dafür
+          nötigen Zahlen an Anthropic.</p>
+        {% if wabi_owner %}
+        <div class="field{{ ' invalid' if errors.api_key }}">
+          <label for="api_key">{{ "Neuen API-Schlüssel eintragen" if wabi_key_source else "API-Schlüssel" }}</label>
+          <input type="password" id="api_key" name="api_key" autocomplete="off" autocapitalize="off"
+                 spellcheck="false" placeholder="sk-ant-…" required>
+          {{ ui.field_error(errors, "api_key") }}
+        </div>
+        <button class="btn" type="submit">Schlüssel speichern</button>
+        {% else %}
+        <p class="muted small">Nur das erste Konto dieser Installation darf den Schlüssel ändern.</p>
+        {% endif %}
+      </form>
+      {% if wabi_owner and wabi_key_source == "file" %}
+      <form class="form" method="post" action="{{ url_for('settings.remove_wabi_key') }}" style="padding-top: 0"
+            data-confirm="Den gespeicherten API-Schlüssel entfernen? Wabi wird dann ausgeschaltet.">
+        {{ ui.csrf() }}
+        <button class="btn secondary small" type="submit">{{ icon("trash") }} Schlüssel entfernen</button>
+      </form>
+      {% endif %}
+    </section>
+
     <section class="card">
       <div class="card-head"><h2>Deine Daten</h2></div>
       <div class="card-body" style="padding-top: 0">

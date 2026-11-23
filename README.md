@@ -182,16 +182,20 @@ Beides steht beim ersten Öffnen im Chatfenster.
 
 ### Einrichten
 
-1. In der [Claude Console](https://console.anthropic.com) einen API-Schlüssel anlegen und Guthaben aufladen
-   (Abrechnung über das Guthaben, nicht über ein Claude-Abo).
-2. Den Schlüssel als Datei **`anthropic_api_key.txt`** (oder `anthropic_api_key`) in den OneDrive-Ordner
-   `Finanzwabe` neben `finanz.db` legen. Dann funktioniert Wabi auf allen PCs. Alternativ: Umgebungsvariable
-   `ANTHROPIC_API_KEY` oder die Datei in `instance\`.
-3. Finanzwabe neu starten.
+Wabi nutzt **deinen eigenen** Anthropic-Schlüssel. Es wird kein Schlüssel mitgeliefert, und die **Kosten der
+KI-Anfragen trägst du selbst** (Abrechnung über das Guthaben bei Anthropic, nicht über ein Claude-Abo).
 
-Ohne Schlüssel bleibt Wabi sichtbar und erklärt freundlich, dass er noch eingerichtet werden muss; die App
-funktioniert normal weiter. Der Schlüssel wird nie angezeigt, protokolliert oder ins Repository geschrieben
-(`.gitignore` schließt Schlüsseldateien aus).
+1. In der [Claude Console](https://console.anthropic.com) einen API-Schlüssel anlegen und Guthaben aufladen.
+2. In Finanzwabe **Einstellungen → Wabi – KI-Assistent** öffnen, den Schlüssel einfügen und speichern.
+   Neu starten ist nicht nötig. Nur das erste Konto der Installation darf den Schlüssel ändern.
+
+Der Schlüssel liegt als Datei `anthropic_api_key` in deinem Datenordner (siehe „Wo liegen meine Daten?“),
+also auf diesem Gerät und nie im Projekt. Wer OneDrive nutzt, hat ihn damit auf allen PCs. Alternativ geht die
+Umgebungsvariable `ANTHROPIC_API_KEY`; sie hat Vorrang und lässt sich in den Einstellungen nicht ändern.
+
+Ohne Schlüssel läuft die App ganz normal weiter. Wabi ist dann ausgeschaltet: Das Chat-Fenster ist gesperrt und
+erklärt, woher man den Schlüssel bekommt und dass man die Kosten selbst trägt. Der Schlüssel wird nie
+angezeigt, protokolliert oder ins Repository geschrieben (`.gitignore` schließt Schlüsseldateien aus).
 
 ### Kosten und Modell
 

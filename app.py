@@ -58,9 +58,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
+    if not app.config.get("DATA_DIR"):
+        # The user's data folder (database, secret key, Wabi's API key): see datadir.py.
+        app.config["DATA_DIR"] = str(datadir.resolve_data_dir().path)
     if not app.config["DATABASE_URL"]:
         # No database given: keep the data in the user folder (see datadir.py), not inside the project.
-        app.instance_path = str(datadir.resolve_data_dir().path)
+        app.instance_path = app.config["DATA_DIR"]
     if not app.config["DATABASE_URL"] or not app.config["SECRET_KEY"]:
         os.makedirs(app.instance_path, exist_ok=True)
     if not app.config["DATABASE_URL"]:

@@ -12,6 +12,7 @@ def app(tmp_path):
         "SECRET_KEY": "test",
         "DATABASE_URL": "sqlite:///" + (tmp_path / "test.db").as_posix(),
         "CSRF_ENABLED": False,
+        "DATA_DIR": str(tmp_path / "data"),  # never the real data folder (and its API key)
     })
     yield app
 

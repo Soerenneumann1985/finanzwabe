@@ -103,7 +103,7 @@ def test_no_key(tmp_path, monkeypatch):
     assert wabi.load_api_key([tmp_path]) is None
 
 
-def test_key_folders_use_onedrive_data_dir(tmp_path, monkeypatch):
+def test_key_folders_use_the_chosen_data_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("FINANZ_DATA_DIR", str(tmp_path))
     assert wabi.key_folders()[0] == tmp_path
 
@@ -506,7 +506,7 @@ def test_endpoint_without_key(client, anna, monkeypatch):
     monkeypatch.setattr(wabi, "load_api_key", lambda folders=None: None)
     data = post(client, [{"role": "user", "content": "Hallo"}]).get_json()
     assert data["configured"] is False
-    assert "noch nicht eingerichtet" in data["reply"]
+    assert "kein API-Schlüssel" in data["reply"] and "console.anthropic.com" in data["reply"]
 
 
 def test_endpoint_rejects_empty_question(client, anna):
