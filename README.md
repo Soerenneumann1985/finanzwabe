@@ -194,7 +194,7 @@ CSV, Excel und `.env` aus.
 ## Wabi, der KI-Assistent
 
 Die kleine Roboterbiene neben dem Logo ist dein Finanz-Assistent. Antippen – Wabi fliegt nach unten rechts
-und öffnet das Chatfenster. Plan und Stand der Umsetzung: [WABI_PLAN.md](WABI_PLAN.md).
+und öffnet das Chatfenster. Plan und Stand der Umsetzung: [docs/archiv/WABI_PLAN.md](docs/archiv/WABI_PLAN.md).
 
 | Was Wabi kann | Beispiel |
 | --- | --- |

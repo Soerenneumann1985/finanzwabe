@@ -1,9 +1,13 @@
 # Finanzwabe online stellen (PythonAnywhere, Server in der EU)
 
-Diese Anleitung bringt Finanzwabe mit HTTPS ins Internet, damit du sie unterwegs und
-Beta-Tester sie auf dem Handy nutzen können. Dauer: etwa eine Stunde.
+Diese Anleitung ist für alle, die Finanzwabe **selbst** mit HTTPS ins Internet stellen wollen, um
+sie unterwegs auf dem Handy zu nutzen. Dauer: etwa eine Stunde. (Das Windows-Programm aus dem Download
+läuft nur lokal und braucht das hier nicht.) Beachte die Lizenz: Sie erlaubt nur nicht kommerzielle
+Nutzung (siehe `LICENSE`).
 
-**Tarif:** Für die Beta reicht das kostenlose Konto („Beginner“, Adresse
+*Stand: November 2026. Tarife, Preise und Menüs des Anbieters ändern sich; bitte selbst prüfen.*
+
+**Tarif:** Zum Ausprobieren reicht das kostenlose Konto („Beginner“, Adresse
 `DEINNAME.eu.pythonanywhere.com`). Eine eigene Adresse wie `app.finanzwabe.de`
 braucht den Tarif „Developer“ (10 € im Monat).
 Hinweis: Beim kostenlosen Konto muss die App alle drei Monate per Klick verlängert
@@ -57,7 +61,7 @@ os.environ["FINANZ_SECRET_KEY"] = "HIER-DEN-GEHEIMSCHLUESSEL-EINFUEGEN"
 os.environ["FINANZ_HTTPS"] = "1"
 os.environ["FINANZ_BEHIND_PROXY"] = "1"
 os.environ["FINANZ_PUBLIC_URL"] = "https://DEINNAME.eu.pythonanywhere.com"
-os.environ["FINANZ_INVITE_CODE"] = "WABE2026"          # Einladungscode für Beta-Tester
+os.environ["FINANZ_INVITE_CODE"] = "BEISPIEL-CODE-AENDERN"  # optional: nur wer den Code kennt, kann sich registrieren
 os.environ["FINANZ_OPERATOR_NAME"] = "Max Mustermann"
 os.environ["FINANZ_OPERATOR_ADDRESS"] = "Straße Hausnummer, PLZ Ort"
 os.environ["FINANZ_CONTACT_EMAIL"] = "deine@adresse.de"
@@ -73,7 +77,7 @@ from wsgi import application  # noqa: E402,F401
 
 4. Im Abschnitt **Static files**: URL `/static/` → Verzeichnis `/home/DEINNAME/finanzwabe/static`
 5. Im Abschnitt **Security**: **Force HTTPS** einschalten.
-6. Oben grün **Reload** klicken und die Adresse öffnen. Registrieren mit dem Einladungscode.
+6. Oben grün **Reload** klicken und die Adresse öffnen. Registrieren (mit dem Einladungscode, falls du einen gesetzt hast).
 
 ## 4. Deine eigenen Daten
 
@@ -104,7 +108,7 @@ finanzwabe/.venv/bin/pip install -r finanzwabe/requirements.txt
 
 und unter **Web** auf **Reload** klicken. Deine Daten in `instance/` bleiben dabei erhalten.
 
-## 7. Hilfe für Beta-Tester
+## 7. Hilfe für Nutzer
 
 In der Bash-Konsole im Ordner `finanzwabe`:
 
@@ -120,8 +124,6 @@ In der Bash-Konsole im Ordner `finanzwabe`:
    CNAME-Eintrag, den du beim Domain-Anbieter einträgst.
 3. Unter **Web → Security** ein kostenloses Let's-Encrypt-Zertifikat aktivieren.
 4. `FINANZ_PUBLIC_URL` in der WSGI-Datei anpassen, **Reload**.
-5. In der Webseite `finanzwabe/script.js` die Zeile `const APP_URL = ""` auf die neue
-   Adresse setzen – dann führen alle Buttons direkt zur App.
 
 ## Datenschutz beim Hosting
 

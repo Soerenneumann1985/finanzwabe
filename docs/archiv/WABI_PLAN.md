@@ -1,5 +1,9 @@
 # Wabi – KI-Assistent für Finanzwabe
 
+> **Historisches Planungsdokument, teilweise veraltet.** Wabi ist umgesetzt. Das aktuelle Verhalten steht
+> in der [README](../../README.md) (Abschnitt „Wabi“). Neuere Entscheidungen: Jeder Nutzer trägt seinen
+> eigenen API-Schlüssel in den Einstellungen ein, die Anzeige der Kosten wurde nicht umgesetzt.
+
 Plan für den Chat-Assistenten Wabi (Flask, SQLAlchemy, Templates in `templates/`,
 Frontend in `static/app.js` und `static/style.css`).
 
@@ -29,7 +33,7 @@ Frontend in `static/app.js` und `static/style.css`).
 Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfolge, jeder Schritt mit Tests:
 
 1. Fragen zu den eigenen Finanzen beantworten, z. B. „Wie viel habe ich im Oktober für Supermarkt
-   ausgegeben?“, „Wie hoch ist mein Sofortkredit noch?“, „Was sind meine Fixkosten?“
+   ausgegeben?“, „Wie hoch ist mein Kredit noch?“, „Was sind meine Fixkosten?“
 2. Durch die App führen: erklären, welcher Reiter was zeigt, und auf Wunsch direkt dorthin verlinken
    (Monat, Jahr, Vermögen, Kredite, Daueraufträge, Import, Einstellungen).
 3. Buchungen anlegen, per Text oder Spracheingabe. Beispiel: „Trag 23,50 € Tankstelle von heute ein.“
@@ -58,9 +62,9 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
   Kategorie, Konto). Gespeichert wird erst nach Tippen auf „Bestätigen“. „Ändern“ und „Abbrechen“
   sind immer möglich.
 - Wabi darf nichts löschen und keine Einstellungen ändern.
-- API-Schlüssel nie im Repository: als Datei `anthropic_api_key` neben `finanz.db` in
-  `OneDrive\Finanzwabe` (wie `secret_key`) oder über eine Umgebungsvariable. `.gitignore`
-  entsprechend prüfen.
+- API-Schlüssel nie im Repository: Jeder Nutzer trägt seinen eigenen Schlüssel in den Einstellungen ein
+  (gespeichert im Datenordner, wie `secret_key`) oder setzt die Umgebungsvariable `ANTHROPIC_API_KEY`.
+  `.gitignore` entsprechend prüfen.
 - An die KI gehen nur die Daten, die für die jeweilige Frage nötig sind, nie die ganze Datenbank.
 - Kurzer Hinweis im Chatfenster beim ersten Öffnen, dass Fragen an Claude in der Cloud gesendet werden.
 - Ohne API-Schlüssel bleibt Wabi sichtbar, sagt aber freundlich, dass er noch eingerichtet werden
@@ -68,10 +72,10 @@ Alle drei Funktionen gehören zur ersten Version. Gebaut wird in dieser Reihenfo
 
 ## 5. Technik, Kosten und Ablauf
 
-- Abrechnung über das eigene Guthaben in der Claude Console (nicht über das Claude-Abo).
+- Abrechnung über das eigene Guthaben des Nutzers in der Claude Console (nicht über ein Claude-Abo).
 - Kosten im Blick behalten: kurze Systemanweisung, kompakte Werkzeug-Antworten, Chatverlauf pro
   Sitzung begrenzen. Optional: Anzeige der ungefähren Kosten in den Einstellungen.
-- Funktioniert auf beiden PCs, weil der Schlüssel im OneDrive-Ordner liegt.
+- Der Schlüssel liegt im Datenordner des Nutzers und gilt für alle Konten dieser Installation.
 - Tests in `tests/` für jedes Werkzeug und für die Bestätigungs-Logik (ohne echte API-Aufrufe, mit Mock).
 - Reihenfolge der Umsetzung:
   1. Wabi-Figur und Chatfenster (nur Oberfläche, noch ohne KI)

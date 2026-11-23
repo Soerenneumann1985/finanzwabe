@@ -29,10 +29,10 @@ def test_registration_needs_terms_and_stores_consent(client, app):
 
 
 def test_invite_code_is_required_when_configured(tmp_path):
-    client = make_app(tmp_path, INVITE_CODE="WABE2026").test_client()
+    client = make_app(tmp_path, INVITE_CODE="BEISPIEL-CODE").test_client()
     assert "Einladungscode" in client.get("/registrieren").text
     assert "Einladungscode stimmt nicht" in register(client, invite="falsch").text
-    assert "Willkommen bei Finanzwabe" in register(client, invite="wabe2026").text  # case does not matter
+    assert "Willkommen bei Finanzwabe" in register(client, invite="beispiel-code").text  # case does not matter
 
 
 def test_beta_badge_and_slogan(client):
