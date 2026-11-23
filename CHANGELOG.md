@@ -4,6 +4,24 @@ Alle wichtigen Änderungen an Finanzwabe stehen hier. Das Format folgt
 [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), die Versionsnummern folgen
 [Semantic Versioning](https://semver.org/lang/de/).
 
+## [0.4.0] – 2026-11-23
+
+Finanzwabe als Windows-Programm: herunterladen, doppelklicken, benutzen.
+
+### Hinzugefügt
+- **Windows-Programm** `Finanzwabe-0.4.0-windows.exe` als Download im Release. Kein Python, kein Terminal nötig.
+  Doppelklick öffnet den Browser; ein kleines Fenster zeigt die Adresse und den Datenordner, Schließen beendet
+  das Programm vollständig. Ein zweiter Doppelklick öffnet nur den Browser.
+- `launcher.py` (Startprogramm) und `finanzwabe.spec` (Bauanleitung für PyInstaller), dazu
+  `requirements-build.txt`. Fehler stehen in `finanzwabe.log` im Datenordner.
+- README: Abschnitt **Installation (Windows, ohne Python)** mit Hinweis zur SmartScreen-Warnung (die Datei ist
+  nicht signiert) und zur SHA256-Prüfsumme.
+
+### Geändert
+- Das Programm ist nur auf diesem PC erreichbar (`127.0.0.1`), nicht im WLAN. Die Entwickler-Variante
+  `serve.py` bleibt unverändert.
+- Die `.exe` schreibt nichts in ihren eigenen Ordner; Daten liegen im Datenordner (siehe 0.3.0).
+
 ## [0.3.0] – 2026-11-23
 
 Vorbereitung, damit auch andere Finanzwabe nutzen können.
@@ -60,5 +78,6 @@ Grundfunktionen: Übersicht, Monat, Jahr, Vermögen, Kredite, Buchungen, Dauerau
 Suche und Export, Excel-Import, Textimport aus dem Online-Banking, Mehrbenutzer-Login, installierbare
 Web-App (PWA), hell und dunkel.
 
+[0.4.0]: https://github.com/Soerenneumann1985/finanzwabe/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Soerenneumann1985/finanzwabe/releases/tag/v0.3.0
 [0.2.0]: https://github.com/Soerenneumann1985/finanzwabe/releases/tag/v0.2.0

@@ -40,7 +40,40 @@ Läuft im Browser am PC und auf dem Smartphone (Android und iPhone) als installi
 | Wabi | KI-Assistent: beantwortet Fragen zu deinen Zahlen, führt durch die App und schlägt Buchungen vor (siehe unten) |
 | Start & Betrieb | Beta-Einladungscode, AGB-Zustimmung, Impressum/Datenschutz/AGB, Backups, Admin-Werkzeug |
 
-## Schnellstart (Windows)
+## Installation (Windows, ohne Python)
+
+Du brauchst weder Python noch ein Terminal.
+
+1. Lade auf der Seite [Releases](https://github.com/Soerenneumann1985/finanzwabe/releases/latest) die Datei
+   **`Finanzwabe-<Version>-windows.exe`** herunter (unter „Assets“).
+2. Doppelklick auf die Datei. Der Browser öffnet sich mit Finanzwabe, dazu ein kleines Fenster.
+   Registriere dich und leg los. **Schließt du das kleine Fenster, beendet sich Finanzwabe.**
+
+**Windows warnt beim ersten Start („Der Computer wurde durch Windows geschützt“).** Das passiert, weil die Datei
+nicht signiert ist. Ein Zertifikat dafür kostet Geld, und Windows warnt bei jeder neuen, unbekannten Datei.
+So geht es trotzdem:
+
+1. Klicke in der Warnung auf **„Weitere Informationen“**.
+2. Klicke dann auf **„Trotzdem ausführen“**.
+
+Du musst niemandem blind vertrauen: Der **Quellcode ist offen einsehbar** (dieses Repository), und die Datei
+wird mit `finanzwabe.spec` aus genau diesem Code gebaut. Wer will, prüft die Datei vor dem Start mit der
+SHA256-Prüfsumme aus den Release-Notizen:
+
+```
+Get-FileHash .\Finanzwabe-<Version>-windows.exe -Algorithm SHA256
+```
+
+- **Deine Daten bleiben auf deinem Rechner** (Ordner `%LOCALAPPDATA%\Finanzwabe`, siehe
+  „Wo liegen meine Daten?“). Das Programm ist nur auf diesem PC erreichbar, nicht im WLAN.
+- Läuft etwas nicht, steht der Grund in der Datei `finanzwabe.log` in diesem Ordner.
+- **Wabi** (KI-Assistent) braucht einen eigenen Anthropic-Schlüssel (siehe „Wabi“). Ohne Schlüssel ist nur Wabi
+  ausgeschaltet, alles andere funktioniert.
+- Entfernen: die `.exe` löschen. Die Daten bleiben im Datenordner, bis du ihn selbst löschst.
+- Selbst bauen: `.venv\Scripts\python -m pip install -r requirements.txt -r requirements-build.txt`, dann
+  `.venv\Scripts\python -m PyInstaller finanzwabe.spec --noconfirm --clean` (Ergebnis: `dist\Finanzwabe.exe`).
+
+## Schnellstart für Entwickler (Windows)
 
 Doppelklick auf **`Finanzwabe_starten.bat`**. Beim ersten Mal richtet die Datei Python-Umgebung und Pakete
 selbst ein. Danach öffnet sich der Browser mit `http://localhost:8000`. Registriere dich und leg los.
@@ -233,7 +266,7 @@ Werkzeug-Antworten, höchstens 12 Nachrichten Verlauf pro Anfrage, Nachrichten a
 .venv\Scripts\python -m pytest
 ```
 
-Rund 280 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
+Rund 290 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
 ganze Web-App (Login, alle Seiten, Buchungen, Umbuchungen, Daueraufträge, Datentrennung zwischen Nutzern,
 Schutz vor gefälschten Formularen) sowie Wabi mit nachgebildeter Claude-API (`tests/test_wabi.py`).
 
