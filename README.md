@@ -233,7 +233,7 @@ Werkzeug-Antworten, höchstens 12 Nachrichten Verlauf pro Anfrage, Nachrichten a
 .venv\Scripts\python -m pytest
 ```
 
-Rund 250 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
+Rund 280 Tests: jede Rechenregel einzeln (`tests/test_calculations.py`), Geldformat, Diagramme und die
 ganze Web-App (Login, alle Seiten, Buchungen, Umbuchungen, Daueraufträge, Datentrennung zwischen Nutzern,
 Schutz vor gefälschten Formularen) sowie Wabi mit nachgebildeter Claude-API (`tests/test_wabi.py`).
 
