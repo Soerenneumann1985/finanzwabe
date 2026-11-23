@@ -38,6 +38,7 @@ anthropic_api_key.txt
 
 # Upload-Pakete und Screenshots
 dist/
+build/
 /screenshots/
 
 # Private Notizen (Startplan usw.) - nie ins Repository
