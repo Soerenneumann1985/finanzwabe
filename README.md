@@ -106,10 +106,23 @@ dort dauerhaft gespeichert, HTTPS ist inklusive.
 Sobald die App online mit HTTPS läuft, erzeugt [PWABuilder](https://www.pwabuilder.com) daraus ein
 Android-Paket (Trusted Web Activity) für den Play Store. Am Code ändert sich dafür nichts.
 
+## Wo liegen meine Daten?
+
+`serve.py` zeigt beim Start immer an, welcher Ordner benutzt wird. Gesucht wird in dieser Reihenfolge:
+
+1. der Ordner aus der Umgebungsvariable `FINANZ_DATA_DIR` (zum Beispiel ein Ordner in OneDrive),
+2. ein Ordner `Finanzwabe` in deinem OneDrive, falls es ihn gibt,
+3. `instance/` im Projekt, aber nur wenn dort von einer älteren Version schon eine `finanz.db` liegt,
+4. sonst dein **Benutzerordner**: Windows `%LOCALAPPDATA%\Finanzwabe`, macOS
+   `~/Library/Application Support/Finanzwabe`, Linux `~/.local/share/finanzwabe`.
+
+Gibt es dort noch keine Datenbank, legt die App beim ersten Start eine leere an (und sagt es dir).
+Zum Sichern genügt es, den angezeigten Ordner zu kopieren.
+
 ## Auf mehreren PCs nutzen (OneDrive)
 
-1. In OneDrive einen Ordner `Finanzwabe` anlegen und `instance\finanz.db` sowie `instance\secret_key`
-   hineinkopieren (Rechtsklick auf den Ordner → *Immer auf diesem Gerät behalten*).
+1. In OneDrive einen Ordner `Finanzwabe` anlegen und `finanz.db` sowie `secret_key` aus deinem Datenordner
+   (siehe oben) hineinkopieren (Rechtsklick auf den Ordner → *Immer auf diesem Gerät behalten*).
 2. Auf jedem PC mit demselben Microsoft-Konto bei OneDrive anmelden und Finanzwabe wie gewohnt starten.
    `serve.py` findet den Ordner von selbst und zeigt beim Start `Daten (OneDrive): …` an.
 
